@@ -9,7 +9,15 @@ from src.api.reference.passport_type import (
     router as passport_type_router,
 )
 from src.api.reference.visa_type import router as visa_type_router
-
+from src.api.reference.airline import router as airline_router
+from src.api.reference.airport import router as airport_router
+from src.api.reference.purpose import router as purpose_router
+from src.api.reference.passenger_type import (
+    router as passenger_type_router,
+)
+from src.api.reference.travel_authorization import (
+    router as travel_authorization_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -26,6 +34,11 @@ app.include_router(region_router)
 app.include_router(currency_router)
 app.include_router(passport_type_router)
 app.include_router(visa_type_router)
+app.include_router(airline_router)
+app.include_router(airport_router)
+app.include_router(purpose_router)
+app.include_router(passenger_type_router)
+app.include_router(travel_authorization_router)
 
 
 @app.get("/")

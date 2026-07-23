@@ -29,7 +29,7 @@ class Airline(BaseModel):
         nullable=True,
     )
 
-    country_id: Mapped[int | None] = mapped_column(
+    country_id: Mapped[int] = mapped_column(
         ForeignKey(
             "countries.id",
             name="fk_airlines_country_id",
@@ -37,7 +37,7 @@ class Airline(BaseModel):
         nullable=False,
     )
 
-    country: Mapped["Country | None"] = relationship(
+    country: Mapped["Country"] = relationship(
         "Country",
         back_populates="airlines",
     )

@@ -20,6 +20,41 @@ from src.services.reference.passport_type_service import (
 from src.repositories.reference.visa_type_repository import VisaTypeRepository
 from src.services.reference.visa_type import VisaTypeService
 
+from src.repositories.reference.airline_repository import (
+    AirlineRepository,
+)
+from src.services.reference.airline_service import (
+    AirlineService,
+)
+
+from src.repositories.reference.airport_repository import (
+    AirportRepository,
+)
+from src.services.reference.airport_service import (
+    AirportService,
+)
+
+from src.repositories.reference.purpose_repository import (
+    PurposeRepository,
+)
+from src.services.reference.purpose_service import (
+    PurposeService,
+)
+
+from src.repositories.reference.passenger_type_repository import (
+    PassengerTypeRepository,
+)
+from src.services.reference.passenger_type_service import (
+    PassengerTypeService,
+)
+
+from src.repositories.reference.travel_authorization_repository import (
+    TravelAuthorizationRepository,
+)
+from src.services.reference.travel_authorization_service import (
+    TravelAuthorizationService,
+)
+
 def get_country_repository() -> CountryRepository:
     """Provide a CountryRepository instance."""
     return CountryRepository()
@@ -83,4 +118,93 @@ def get_visa_type_service(
 ) -> VisaTypeService:
     return VisaTypeService(
         visa_type_repository,
+    )
+
+def get_airline_repository() -> AirlineRepository:
+    """Get Airline repository instance."""
+    return AirlineRepository()
+
+def get_airline_service(
+    airline_repository: AirlineRepository = Depends(
+        get_airline_repository,
+    ),
+    country_repository: CountryRepository = Depends(
+        get_country_repository,
+    ),
+) -> AirlineService:
+    """Get Airline service instance."""
+    return AirlineService(
+        airline_repository,
+        country_repository,
+    )
+
+def get_airport_repository() -> AirportRepository:
+    """Get Airport repository instance."""
+    return AirportRepository()
+
+def get_airport_service(
+    airport_repository: AirportRepository = Depends(
+        get_airport_repository,
+    ),
+    country_repository: CountryRepository = Depends(
+        get_country_repository,
+    ),
+) -> AirportService:
+    """Get Airport service instance."""
+    return AirportService(
+        airport_repository,
+        country_repository,
+    )
+
+def get_purpose_repository() -> PurposeRepository:
+    """Get Purpose repository instance."""
+    return PurposeRepository()
+
+def get_purpose_service(
+    purpose_repository: PurposeRepository = Depends(
+        get_purpose_repository,
+    ),
+) -> PurposeService:
+    """Get Purpose service instance."""
+    return PurposeService(
+        purpose_repository,
+    )
+
+def get_passenger_type_repository() -> PassengerTypeRepository:
+    """Get PassengerType repository."""
+
+    return PassengerTypeRepository()
+
+
+def get_passenger_type_service(
+    passenger_type_repository: PassengerTypeRepository = Depends(
+        get_passenger_type_repository,
+    ),
+) -> PassengerTypeService:
+    """Get PassengerType service."""
+
+    return PassengerTypeService(
+        passenger_type_repository,
+    )
+
+def get_travel_authorization_repository(
+) -> TravelAuthorizationRepository:
+    """Get TravelAuthorization repository."""
+
+    return TravelAuthorizationRepository()
+
+
+def get_travel_authorization_service(
+    travel_authorization_repository: TravelAuthorizationRepository = Depends(
+        get_travel_authorization_repository,
+    ),
+    country_repository: CountryRepository = Depends(
+        get_country_repository,
+    ),
+) -> TravelAuthorizationService:
+    """Get TravelAuthorization service."""
+
+    return TravelAuthorizationService(
+        travel_authorization_repository,
+        country_repository,
     )
