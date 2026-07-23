@@ -5,5 +5,5 @@ class Base(DeclarativeBase):
     pass
 
 
-# Import models so Alembic can discover them
-from src.models.reference import *  # noqa: E402,F401
+# Import models so Alembic can discover them.
+from src.models.reference import *  # noqa: F401,F403,E402
