@@ -1,5 +1,6 @@
 from fastapi import Depends
 
+
 from src.repositories.reference.country_repository import CountryRepository
 from src.services.reference.country_service import CountryService
 
@@ -15,6 +16,9 @@ from src.repositories.reference.passport_type_repository import (
 from src.services.reference.passport_type_service import (
     PassportTypeService,
 )
+
+from src.repositories.reference.visa_type_repository import VisaTypeRepository
+from src.services.reference.visa_type import VisaTypeService
 
 def get_country_repository() -> CountryRepository:
     """Provide a CountryRepository instance."""
@@ -67,3 +71,16 @@ def get_passport_type_service(
 ) -> PassportTypeService:
     """Get PassportType service instance."""
     return PassportTypeService(passport_type_repository)
+
+def get_visa_type_repository() -> VisaTypeRepository:
+    """Get VisaType repository instance."""
+    return VisaTypeRepository()
+
+def get_visa_type_service(
+    visa_type_repository: VisaTypeRepository = Depends(
+        get_visa_type_repository,
+    ),
+) -> VisaTypeService:
+    return VisaTypeService(
+        visa_type_repository,
+    )

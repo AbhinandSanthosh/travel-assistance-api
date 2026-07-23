@@ -8,6 +8,8 @@ from src.api.reference.currency import router as currency_router
 from src.api.reference.passport_type import (
     router as passport_type_router,
 )
+from src.api.reference.visa_type import router as visa_type_router
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -23,6 +25,7 @@ app.include_router(country_router)
 app.include_router(region_router)
 app.include_router(currency_router)
 app.include_router(passport_type_router)
+app.include_router(visa_type_router)
 
 
 @app.get("/")
