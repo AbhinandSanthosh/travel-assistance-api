@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from src.api.deps import get_airline_service
+from src.api.dependencies.reference import get_airline_service
 from src.db.session import get_db
 from src.schemas.reference.airline import (
     AirlineCreate,

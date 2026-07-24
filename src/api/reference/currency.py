@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
-from src.api.deps import get_currency_service
+from src.api.dependencies.reference import get_currency_service
 from src.db.session import get_db
 from src.schemas.reference.currency import (
     CurrencyCreate,

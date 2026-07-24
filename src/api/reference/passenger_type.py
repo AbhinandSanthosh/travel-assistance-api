@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from src.api.deps import get_passenger_type_service
+from src.api.dependencies.reference import get_passenger_type_service
 from src.db.session import get_db
 from src.schemas.reference.passenger_type import (
     PassengerTypeCreate,

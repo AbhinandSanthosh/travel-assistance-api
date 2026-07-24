@@ -19,6 +19,10 @@ from src.api.reference.travel_authorization import (
     router as travel_authorization_router,
 )
 
+from src.api.compliance.rule import router as rule_router
+
+
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -40,6 +44,7 @@ app.include_router(purpose_router)
 app.include_router(passenger_type_router)
 app.include_router(travel_authorization_router)
 
+app.include_router(rule_router)
 
 @app.get("/")
 def root():
