@@ -12,6 +12,7 @@ from src.schemas.reference.passport_type import (
     PassportTypeCreate,
     PassportTypeUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class PassportTypeService:
@@ -22,6 +23,9 @@ class PassportTypeService:
         passport_type_repository: PassportTypeRepository,
     ):
         self.passport_type_repository = passport_type_repository
+        self.base_crud = BaseCrudService(
+            passport_type_repository,
+        )
 
     def create_passport_type(
         self,
@@ -50,13 +54,10 @@ class PassportTypeService:
                 passport_type_data.passport_name,
             )
 
-        passport_type = PassportType(
-            **passport_type_data.model_dump()
-        )
-
-        return self.passport_type_repository.create(
-            db,
-            passport_type,
+        return self.base_crud.create(
+            db=db,
+            model=PassportType,
+            data=passport_type_data,
         )
 
     def get_passport_type(
@@ -66,13 +67,15 @@ class PassportTypeService:
     ) -> PassportType:
         """Get a passport type by ID."""
 
-        passport_type = self.passport_type_repository.get_by_id(
-            db,
-            passport_type_id,
+        passport_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passport_type_id,
         )
 
         if not passport_type:
-            raise PassportTypeNotFoundError(passport_type_id)
+            raise PassportTypeNotFoundError(
+                passport_type_id,
+            )
 
         return passport_type
 
@@ -82,7 +85,7 @@ class PassportTypeService:
     ) -> list[PassportType]:
         """Get all passport types."""
 
-        return self.passport_type_repository.get_all(db)
+        return self.base_crud.get_all(db)
 
     def update_passport_type(
         self,
@@ -92,13 +95,15 @@ class PassportTypeService:
     ) -> PassportType:
         """Update a passport type."""
 
-        passport_type = self.passport_type_repository.get_by_id(
-            db,
-            passport_type_id,
+        passport_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passport_type_id,
         )
 
         if not passport_type:
-            raise PassportTypeNotFoundError(passport_type_id)
+            raise PassportTypeNotFoundError(
+                passport_type_id,
+            )
 
         update_data = passport_type_data.model_dump(
             exclude_unset=True,
@@ -134,12 +139,10 @@ class PassportTypeService:
                     update_data["passport_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(passport_type, field, value)
-
-        return self.passport_type_repository.save(
-            db,
-            passport_type,
+        return self.base_crud.update(
+            db=db,
+            obj=passport_type,
+            data=passport_type_data,
         )
 
     def delete_passport_type(
@@ -149,15 +152,17 @@ class PassportTypeService:
     ) -> None:
         """Delete a passport type."""
 
-        passport_type = self.passport_type_repository.get_by_id(
-            db,
-            passport_type_id,
+        passport_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passport_type_id,
         )
 
         if not passport_type:
-            raise PassportTypeNotFoundError(passport_type_id)
+            raise PassportTypeNotFoundError(
+                passport_type_id,
+            )
 
-        self.passport_type_repository.delete(
-            db,
-            passport_type,
+        self.base_crud.delete(
+            db=db,
+            obj=passport_type,
         )

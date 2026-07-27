@@ -12,6 +12,7 @@ from src.schemas.reference.passenger_type import (
     PassengerTypeCreate,
     PassengerTypeUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class PassengerTypeService:
@@ -22,6 +23,9 @@ class PassengerTypeService:
         passenger_type_repository: PassengerTypeRepository,
     ):
         self.passenger_type_repository = passenger_type_repository
+        self.base_crud = BaseCrudService(
+            passenger_type_repository,
+        )
 
     def create_passenger_type(
         self,
@@ -54,13 +58,10 @@ class PassengerTypeService:
                 passenger_type_data.passenger_type_name,
             )
 
-        passenger_type = PassengerType(
-            **passenger_type_data.model_dump(),
-        )
-
-        return self.passenger_type_repository.create(
-            db,
-            passenger_type,
+        return self.base_crud.create(
+            db=db,
+            model=PassengerType,
+            data=passenger_type_data,
         )
 
     def get_passenger_type(
@@ -70,9 +71,9 @@ class PassengerTypeService:
     ) -> PassengerType:
         """Get a passenger type by ID."""
 
-        passenger_type = self.passenger_type_repository.get_by_id(
-            db,
-            passenger_type_id,
+        passenger_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passenger_type_id,
         )
 
         if not passenger_type:
@@ -88,9 +89,7 @@ class PassengerTypeService:
     ) -> list[PassengerType]:
         """Get all passenger types."""
 
-        return self.passenger_type_repository.get_all(
-            db,
-        )
+        return self.base_crud.get_all(db)
 
     def update_passenger_type(
         self,
@@ -100,9 +99,9 @@ class PassengerTypeService:
     ) -> PassengerType:
         """Update a passenger type."""
 
-        passenger_type = self.passenger_type_repository.get_by_id(
-            db,
-            passenger_type_id,
+        passenger_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passenger_type_id,
         )
 
         if not passenger_type:
@@ -148,16 +147,10 @@ class PassengerTypeService:
                     update_data["passenger_type_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                passenger_type,
-                field,
-                value,
-            )
-
-        return self.passenger_type_repository.save(
-            db,
-            passenger_type,
+        return self.base_crud.update(
+            db=db,
+            obj=passenger_type,
+            data=passenger_type_data,
         )
 
     def delete_passenger_type(
@@ -167,9 +160,9 @@ class PassengerTypeService:
     ) -> None:
         """Delete a passenger type."""
 
-        passenger_type = self.passenger_type_repository.get_by_id(
-            db,
-            passenger_type_id,
+        passenger_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=passenger_type_id,
         )
 
         if not passenger_type:
@@ -177,7 +170,7 @@ class PassengerTypeService:
                 passenger_type_id,
             )
 
-        self.passenger_type_repository.delete(
-            db,
-            passenger_type,
+        self.base_crud.delete(
+            db=db,
+            obj=passenger_type,
         )

@@ -10,7 +10,7 @@ from src.schemas.reference.region import (
     RegionCreate,
     RegionUpdate,
 )
-
+from src.services.base_crud_service import BaseCrudService
 
 class RegionService:
     """Service layer for Region."""
@@ -20,6 +20,7 @@ class RegionService:
         region_repository: RegionRepository,
     ):
         self.region_repository = region_repository
+        self.base_crud = BaseCrudService(region_repository)
 
     def create_region(
         self,
@@ -38,11 +39,10 @@ class RegionService:
                 region_data.region_name,
             )
 
-        region = Region(**region_data.model_dump())
-
-        return self.region_repository.create(
-            db,
-            region,
+        return self.base_crud.create(
+            db=db,
+            model=Region,
+            data=region_data,
         )
 
     def get_region(
@@ -52,9 +52,9 @@ class RegionService:
     ) -> Region:
         """Get a region by ID."""
 
-        region = self.region_repository.get_by_id(
-            db,
-            region_id,
+        region = self.base_crud.get_by_id(
+            db=db,
+            obj_id=region_id,
         )
 
         if not region:
@@ -68,7 +68,7 @@ class RegionService:
     ) -> list[Region]:
         """Get all regions."""
 
-        return self.region_repository.get_all(db)
+        return self.base_crud.get_all(db)
 
     def update_region(
         self,
@@ -78,9 +78,9 @@ class RegionService:
     ) -> Region:
         """Update a region."""
 
-        region = self.region_repository.get_by_id(
-            db,
-            region_id,
+        region = self.base_crud.get_by_id(
+            db=db,
+            obj_id=region_id,
         )
 
         if not region:
@@ -104,12 +104,10 @@ class RegionService:
                     update_data["region_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(region, field, value)
-
-        return self.region_repository.save(
-            db,
-            region,
+        return self.base_crud.update(
+            db=db,
+            obj=region,
+            data=region_data,
         )
 
     def delete_region(
@@ -119,15 +117,15 @@ class RegionService:
     ) -> None:
         """Delete a region."""
 
-        region = self.region_repository.get_by_id(
-            db,
-            region_id,
+        region = self.base_crud.get_by_id(
+            db=db,
+            obj_id=region_id,
         )
 
         if not region:
             raise RegionNotFoundError(region_id)
 
-        self.region_repository.delete(
-            db,
-            region,
+        self.base_crud.delete(
+            db=db,
+            obj=region,
         )

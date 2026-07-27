@@ -1,8 +1,8 @@
 from sqlalchemy import String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base_model import BaseModel
-
+from src.models.compliance.visa_rule import VisaRule
 
 class Purpose(BaseModel):
     __tablename__ = "purposes"
@@ -16,6 +16,11 @@ class Purpose(BaseModel):
     purpose_name: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
+    )
+
+    visa_rules: Mapped[list["VisaRule"]] = relationship(
+        "VisaRule",
+        back_populates="purpose",
     )
 
     description: Mapped[str | None] = mapped_column(

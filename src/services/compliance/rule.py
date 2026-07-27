@@ -10,6 +10,7 @@ from src.schemas.compliance.rule import (
     RuleCreate,
     RuleUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class RuleService:
@@ -18,8 +19,9 @@ class RuleService:
     def __init__(
         self,
         rule_repository: RuleRepository,
-    ):
+    ) -> None:
         self.rule_repository = rule_repository
+        self.crud = BaseCrudService(rule_repository)
 
     def create_rule(
         self,
@@ -40,13 +42,12 @@ class RuleService:
                 value=rule_data.rule_code,
             )
 
-        rule = Rule(**rule_data.model_dump())
-
-        return self.rule_repository.create(
+        return self.crud.create(
             db=db,
-            obj=rule,
+            model=Rule,
+            data=rule_data,
         )
-
+    
     def get_rule(
         self,
         db: Session,
@@ -54,7 +55,7 @@ class RuleService:
     ) -> Rule:
         """Retrieve a rule by ID."""
 
-        rule = self.rule_repository.get_by_id(
+        rule = self.crud.get_by_id(
             db=db,
             obj_id=rule_id,
         )
@@ -63,14 +64,14 @@ class RuleService:
             raise RuleNotFoundError(rule_id)
 
         return rule
-
+        
     def get_all_rules(
         self,
         db: Session,
     ) -> list[Rule]:
         """Retrieve all rules."""
 
-        return self.rule_repository.get_all(db)
+        return self.crud.get_all(db)
 
     def update_rule(
         self,
@@ -104,16 +105,10 @@ class RuleService:
                     value=update_data["rule_code"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                rule,
-                field,
-                value,
-            )
-
-        return self.rule_repository.save(
+        return self.crud.update(
             db=db,
             obj=rule,
+            data=rule_data,
         )
 
     def delete_rule(
@@ -128,7 +123,7 @@ class RuleService:
             rule_id=rule_id,
         )
 
-        self.rule_repository.delete(
+        self.crud.delete(
             db=db,
             obj=rule,
         )

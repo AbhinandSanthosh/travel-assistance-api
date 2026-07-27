@@ -10,7 +10,7 @@ from src.schemas.reference.currency import (
     CurrencyCreate,
     CurrencyUpdate,
 )
-
+from src.services.base_crud_service import BaseCrudService
 
 class CurrencyService:
     """Service layer for Currency."""
@@ -20,6 +20,7 @@ class CurrencyService:
         currency_repository: CurrencyRepository,
     ):
         self.currency_repository = currency_repository
+        self.base_crud = BaseCrudService(currency_repository)
 
     def create_currency(
         self,
@@ -48,11 +49,10 @@ class CurrencyService:
                 currency_data.currency_name,
             )
 
-        currency = Currency(**currency_data.model_dump())
-
-        return self.currency_repository.create(
-            db,
-            currency,
+        return self.base_crud.create(
+            db=db,
+            model=Currency,
+            data=currency_data,
         )
 
     def get_currency(
@@ -62,9 +62,9 @@ class CurrencyService:
     ) -> Currency:
         """Get a currency by ID."""
 
-        currency = self.currency_repository.get_by_id(
-            db,
-            currency_id,
+        currency = self.base_crud.get_by_id(
+            db=db,
+            obj_id=currency_id,
         )
 
         if not currency:
@@ -78,7 +78,7 @@ class CurrencyService:
     ) -> list[Currency]:
         """Get all currencies."""
 
-        return self.currency_repository.get_all(db)
+        return self.base_crud.get_all(db)
 
     def update_currency(
         self,
@@ -88,9 +88,9 @@ class CurrencyService:
     ) -> Currency:
         """Update a currency."""
 
-        currency = self.currency_repository.get_by_id(
-            db,
-            currency_id,
+        currency = self.base_crud.get_by_id(
+            db=db,
+            obj_id=currency_id,
         )
 
         if not currency:
@@ -108,6 +108,7 @@ class CurrencyService:
                 db,
                 update_data["currency_code"],
             )
+
             if existing:
                 raise CurrencyAlreadyExistsError(
                     "currency_code",
@@ -122,18 +123,17 @@ class CurrencyService:
                 db,
                 update_data["currency_name"],
             )
+
             if existing:
                 raise CurrencyAlreadyExistsError(
                     "currency_name",
                     update_data["currency_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(currency, field, value)
-
-        return self.currency_repository.save(
-            db,
-            currency,
+        return self.base_crud.update(
+            db=db,
+            obj=currency,
+            data=currency_data,
         )
 
     def delete_currency(
@@ -143,15 +143,16 @@ class CurrencyService:
     ) -> None:
         """Delete a currency."""
 
-        currency = self.currency_repository.get_by_id(
-            db,
-            currency_id,
+        currency = self.base_crud.get_by_id(
+            db=db,
+            obj_id=currency_id,
         )
 
         if not currency:
             raise CurrencyNotFoundError(currency_id)
 
-        self.currency_repository.delete(
-            db,
-            currency,
+        self.base_crud.delete(
+            db=db,
+            obj=currency,
         )
+

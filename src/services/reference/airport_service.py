@@ -16,6 +16,7 @@ from src.schemas.reference.airport import (
     AirportCreate,
     AirportUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class AirportService:
@@ -28,6 +29,9 @@ class AirportService:
     ):
         self.airport_repository = airport_repository
         self.country_repository = country_repository
+        self.base_crud = BaseCrudService(
+            airport_repository,
+        )
 
     def create_airport(
         self,
@@ -72,18 +76,16 @@ class AirportService:
             db,
             airport_data.country_id,
         )
+
         if not country:
             raise CountryNotFoundError(
                 airport_data.country_id,
             )
 
-        airport = Airport(
-            **airport_data.model_dump(),
-        )
-
-        return self.airport_repository.create(
-            db,
-            airport,
+        return self.base_crud.create(
+            db=db,
+            model=Airport,
+            data=airport_data,
         )
 
     def get_airport(
@@ -93,9 +95,9 @@ class AirportService:
     ) -> Airport:
         """Get an airport by ID."""
 
-        airport = self.airport_repository.get_by_id(
-            db,
-            airport_id,
+        airport = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airport_id,
         )
 
         if not airport:
@@ -111,9 +113,7 @@ class AirportService:
     ) -> list[Airport]:
         """Get all airports."""
 
-        return self.airport_repository.get_all(
-            db,
-        )
+        return self.base_crud.get_all(db)
 
     def update_airport(
         self,
@@ -123,9 +123,9 @@ class AirportService:
     ) -> Airport:
         """Update an airport."""
 
-        airport = self.airport_repository.get_by_id(
-            db,
-            airport_id,
+        airport = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airport_id,
         )
 
         if not airport:
@@ -146,6 +146,7 @@ class AirportService:
                 db,
                 update_data["airport_name"],
             )
+
             if existing:
                 raise AirportAlreadyExistsError(
                     "airport_name",
@@ -154,14 +155,14 @@ class AirportService:
 
         if (
             "iata_code" in update_data
-            and update_data["iata_code"]
-            != airport.iata_code
+            and update_data["iata_code"] != airport.iata_code
             and update_data["iata_code"] is not None
         ):
             existing = self.airport_repository.get_by_iata_code(
                 db,
                 update_data["iata_code"],
             )
+
             if existing:
                 raise AirportAlreadyExistsError(
                     "iata_code",
@@ -170,14 +171,14 @@ class AirportService:
 
         if (
             "icao_code" in update_data
-            and update_data["icao_code"]
-            != airport.icao_code
+            and update_data["icao_code"] != airport.icao_code
             and update_data["icao_code"] is not None
         ):
             existing = self.airport_repository.get_by_icao_code(
                 db,
                 update_data["icao_code"],
             )
+
             if existing:
                 raise AirportAlreadyExistsError(
                     "icao_code",
@@ -186,28 +187,22 @@ class AirportService:
 
         if (
             "country_id" in update_data
-            and update_data["country_id"]
-            != airport.country_id
+            and update_data["country_id"] != airport.country_id
         ):
             country = self.country_repository.get_by_id(
                 db,
                 update_data["country_id"],
             )
+
             if not country:
                 raise CountryNotFoundError(
                     update_data["country_id"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                airport,
-                field,
-                value,
-            )
-
-        return self.airport_repository.save(
-            db,
-            airport,
+        return self.base_crud.update(
+            db=db,
+            obj=airport,
+            data=airport_data,
         )
 
     def delete_airport(
@@ -217,9 +212,9 @@ class AirportService:
     ) -> None:
         """Delete an airport."""
 
-        airport = self.airport_repository.get_by_id(
-            db,
-            airport_id,
+        airport = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airport_id,
         )
 
         if not airport:
@@ -227,7 +222,7 @@ class AirportService:
                 airport_id,
             )
 
-        self.airport_repository.delete(
-            db,
-            airport,
+        self.base_crud.delete(
+            db=db,
+            obj=airport,
         )

@@ -8,7 +8,9 @@ from src.exceptions.travel_authorization import (
 from src.models.reference.travel_authorization import (
     TravelAuthorization,
 )
-from src.repositories.reference.country_repository import CountryRepository
+from src.repositories.reference.country_repository import (
+    CountryRepository,
+)
 from src.repositories.reference.travel_authorization_repository import (
     TravelAuthorizationRepository,
 )
@@ -16,6 +18,7 @@ from src.schemas.reference.travel_authorization import (
     TravelAuthorizationCreate,
     TravelAuthorizationUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class TravelAuthorizationService:
@@ -30,6 +33,9 @@ class TravelAuthorizationService:
             travel_authorization_repository
         )
         self.country_repository = country_repository
+        self.base_crud = BaseCrudService(
+            travel_authorization_repository,
+        )
 
     def create_travel_authorization(
         self,
@@ -66,18 +72,16 @@ class TravelAuthorizationService:
             db,
             travel_authorization_data.destination_country_id,
         )
+
         if not country:
             raise CountryNotFoundError(
                 travel_authorization_data.destination_country_id,
             )
 
-        travel_authorization = TravelAuthorization(
-            **travel_authorization_data.model_dump(),
-        )
-
-        return self.travel_authorization_repository.create(
-            db,
-            travel_authorization,
+        return self.base_crud.create(
+            db=db,
+            model=TravelAuthorization,
+            data=travel_authorization_data,
         )
 
     def get_travel_authorization(
@@ -87,11 +91,9 @@ class TravelAuthorizationService:
     ) -> TravelAuthorization:
         """Get a travel authorization by ID."""
 
-        travel_authorization = (
-            self.travel_authorization_repository.get_by_id(
-                db,
-                travel_authorization_id,
-            )
+        travel_authorization = self.base_crud.get_by_id(
+            db=db,
+            obj_id=travel_authorization_id,
         )
 
         if not travel_authorization:
@@ -107,7 +109,7 @@ class TravelAuthorizationService:
     ) -> list[TravelAuthorization]:
         """Get all travel authorizations."""
 
-        return self.travel_authorization_repository.get_all(db)
+        return self.base_crud.get_all(db)
 
     def update_travel_authorization(
         self,
@@ -117,11 +119,9 @@ class TravelAuthorizationService:
     ) -> TravelAuthorization:
         """Update a travel authorization."""
 
-        travel_authorization = (
-            self.travel_authorization_repository.get_by_id(
-                db,
-                travel_authorization_id,
-            )
+        travel_authorization = self.base_crud.get_by_id(
+            db=db,
+            obj_id=travel_authorization_id,
         )
 
         if not travel_authorization:
@@ -144,6 +144,7 @@ class TravelAuthorizationService:
                     update_data["authorization_code"],
                 )
             )
+
             if existing:
                 raise TravelAuthorizationAlreadyExistsError(
                     "authorization_code",
@@ -161,32 +162,32 @@ class TravelAuthorizationService:
                     update_data["authorization_name"],
                 )
             )
+
             if existing:
                 raise TravelAuthorizationAlreadyExistsError(
                     "authorization_name",
                     update_data["authorization_name"],
                 )
 
-        if "destination_country_id" in update_data:
+        if (
+            "destination_country_id" in update_data
+            and update_data["destination_country_id"]
+            != travel_authorization.destination_country_id
+        ):
             country = self.country_repository.get_by_id(
                 db,
                 update_data["destination_country_id"],
             )
+
             if not country:
                 raise CountryNotFoundError(
                     update_data["destination_country_id"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                travel_authorization,
-                field,
-                value,
-            )
-
-        return self.travel_authorization_repository.save(
-            db,
-            travel_authorization,
+        return self.base_crud.update(
+            db=db,
+            obj=travel_authorization,
+            data=travel_authorization_data,
         )
 
     def delete_travel_authorization(
@@ -196,11 +197,9 @@ class TravelAuthorizationService:
     ) -> None:
         """Delete a travel authorization."""
 
-        travel_authorization = (
-            self.travel_authorization_repository.get_by_id(
-                db,
-                travel_authorization_id,
-            )
+        travel_authorization = self.base_crud.get_by_id(
+            db=db,
+            obj_id=travel_authorization_id,
         )
 
         if not travel_authorization:
@@ -208,7 +207,7 @@ class TravelAuthorizationService:
                 travel_authorization_id,
             )
 
-        self.travel_authorization_repository.delete(
-            db,
-            travel_authorization,
+        self.base_crud.delete(
+            db=db,
+            obj=travel_authorization,
         )

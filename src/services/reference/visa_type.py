@@ -12,6 +12,7 @@ from src.schemas.reference.visa_type import (
     VisaTypeCreate,
     VisaTypeUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class VisaTypeService:
@@ -22,6 +23,9 @@ class VisaTypeService:
         visa_type_repository: VisaTypeRepository,
     ):
         self.visa_type_repository = visa_type_repository
+        self.base_crud = BaseCrudService(
+            visa_type_repository,
+        )
 
     def create_visa_type(
         self,
@@ -50,13 +54,10 @@ class VisaTypeService:
                 visa_type_data.visa_name,
             )
 
-        visa_type = VisaType(
-            **visa_type_data.model_dump()
-        )
-
-        return self.visa_type_repository.create(
-            db,
-            visa_type,
+        return self.base_crud.create(
+            db=db,
+            model=VisaType,
+            data=visa_type_data,
         )
 
     def get_visa_type(
@@ -66,9 +67,9 @@ class VisaTypeService:
     ) -> VisaType:
         """Get a visa type by ID."""
 
-        visa_type = self.visa_type_repository.get_by_id(
-            db,
-            visa_type_id,
+        visa_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=visa_type_id,
         )
 
         if not visa_type:
@@ -84,9 +85,7 @@ class VisaTypeService:
     ) -> list[VisaType]:
         """Get all visa types."""
 
-        return self.visa_type_repository.get_all(
-            db,
-        )
+        return self.base_crud.get_all(db)
 
     def update_visa_type(
         self,
@@ -96,9 +95,9 @@ class VisaTypeService:
     ) -> VisaType:
         """Update a visa type."""
 
-        visa_type = self.visa_type_repository.get_by_id(
-            db,
-            visa_type_id,
+        visa_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=visa_type_id,
         )
 
         if not visa_type:
@@ -140,16 +139,10 @@ class VisaTypeService:
                     update_data["visa_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                visa_type,
-                field,
-                value,
-            )
-
-        return self.visa_type_repository.save(
-            db,
-            visa_type,
+        return self.base_crud.update(
+            db=db,
+            obj=visa_type,
+            data=visa_type_data,
         )
 
     def delete_visa_type(
@@ -159,9 +152,9 @@ class VisaTypeService:
     ) -> None:
         """Delete a visa type."""
 
-        visa_type = self.visa_type_repository.get_by_id(
-            db,
-            visa_type_id,
+        visa_type = self.base_crud.get_by_id(
+            db=db,
+            obj_id=visa_type_id,
         )
 
         if not visa_type:
@@ -169,7 +162,7 @@ class VisaTypeService:
                 visa_type_id,
             )
 
-        self.visa_type_repository.delete(
-            db,
-            visa_type,
+        self.base_crud.delete(
+            db=db,
+            obj=visa_type,
         )

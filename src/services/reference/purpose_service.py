@@ -12,6 +12,7 @@ from src.schemas.reference.purpose import (
     PurposeCreate,
     PurposeUpdate,
 )
+from src.services.base_crud_service import BaseCrudService
 
 
 class PurposeService:
@@ -22,6 +23,9 @@ class PurposeService:
         purpose_repository: PurposeRepository,
     ):
         self.purpose_repository = purpose_repository
+        self.base_crud = BaseCrudService(
+            purpose_repository,
+        )
 
     def create_purpose(
         self,
@@ -50,13 +54,10 @@ class PurposeService:
                 purpose_data.purpose_name,
             )
 
-        purpose = Purpose(
-            **purpose_data.model_dump(),
-        )
-
-        return self.purpose_repository.create(
-            db,
-            purpose,
+        return self.base_crud.create(
+            db=db,
+            model=Purpose,
+            data=purpose_data,
         )
 
     def get_purpose(
@@ -66,9 +67,9 @@ class PurposeService:
     ) -> Purpose:
         """Get a purpose by ID."""
 
-        purpose = self.purpose_repository.get_by_id(
-            db,
-            purpose_id,
+        purpose = self.base_crud.get_by_id(
+            db=db,
+            obj_id=purpose_id,
         )
 
         if not purpose:
@@ -84,9 +85,7 @@ class PurposeService:
     ) -> list[Purpose]:
         """Get all purposes."""
 
-        return self.purpose_repository.get_all(
-            db,
-        )
+        return self.base_crud.get_all(db)
 
     def update_purpose(
         self,
@@ -96,9 +95,9 @@ class PurposeService:
     ) -> Purpose:
         """Update a purpose."""
 
-        purpose = self.purpose_repository.get_by_id(
-            db,
-            purpose_id,
+        purpose = self.base_crud.get_by_id(
+            db=db,
+            obj_id=purpose_id,
         )
 
         if not purpose:
@@ -140,16 +139,10 @@ class PurposeService:
                     update_data["purpose_name"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                purpose,
-                field,
-                value,
-            )
-
-        return self.purpose_repository.save(
-            db,
-            purpose,
+        return self.base_crud.update(
+            db=db,
+            obj=purpose,
+            data=purpose_data,
         )
 
     def delete_purpose(
@@ -159,9 +152,9 @@ class PurposeService:
     ) -> None:
         """Delete a purpose."""
 
-        purpose = self.purpose_repository.get_by_id(
-            db,
-            purpose_id,
+        purpose = self.base_crud.get_by_id(
+            db=db,
+            obj_id=purpose_id,
         )
 
         if not purpose:
@@ -169,7 +162,7 @@ class PurposeService:
                 purpose_id,
             )
 
-        self.purpose_repository.delete(
-            db,
-            purpose,
+        self.base_crud.delete(
+            db=db,
+            obj=purpose,
         )

@@ -17,10 +17,10 @@ from src.schemas.reference.airline import (
     AirlineUpdate,
 )
 
+from src.services.base_crud_service import BaseCrudService
 
 class AirlineService:
     """Service layer for Airline."""
-
     def __init__(
         self,
         airline_repository: AirlineRepository,
@@ -28,6 +28,7 @@ class AirlineService:
     ):
         self.airline_repository = airline_repository
         self.country_repository = country_repository
+        self.base_crud = BaseCrudService(airline_repository)
 
     def create_airline(
         self,
@@ -82,13 +83,10 @@ class AirlineService:
                 airline_data.country_id,
             )
 
-        airline = Airline(
-            **airline_data.model_dump(),
-        )
-
-        return self.airline_repository.create(
-            db,
-            airline,
+        return self.base_crud.create(
+            db=db,
+            model=Airline,
+            data=airline_data,
         )
 
     def get_airline(
@@ -98,9 +96,9 @@ class AirlineService:
     ) -> Airline:
         """Get an airline by ID."""
 
-        airline = self.airline_repository.get_by_id(
-            db,
-            airline_id,
+        airline = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airline_id,
         )
 
         if not airline:
@@ -116,9 +114,7 @@ class AirlineService:
     ) -> list[Airline]:
         """Get all airlines."""
 
-        return self.airline_repository.get_all(
-            db,
-        )
+        return self.base_crud.get_all(db)
 
     def update_airline(
         self,
@@ -128,9 +124,9 @@ class AirlineService:
     ) -> Airline:
         """Update an airline."""
 
-        airline = self.airline_repository.get_by_id(
-            db,
-            airline_id,
+        airline = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airline_id,
         )
 
         if not airline:
@@ -163,11 +159,9 @@ class AirlineService:
             != airline.iata_code
             and update_data["iata_code"] is not None
         ):
-            existing = (
-                self.airline_repository.get_by_iata_code(
-                    db,
-                    update_data["iata_code"],
-                )
+            existing = self.airline_repository.get_by_iata_code(
+                db,
+                update_data["iata_code"],
             )
             if existing:
                 raise AirlineAlreadyExistsError(
@@ -181,11 +175,9 @@ class AirlineService:
             != airline.icao_code
             and update_data["icao_code"] is not None
         ):
-            existing = (
-                self.airline_repository.get_by_icao_code(
-                    db,
-                    update_data["icao_code"],
-                )
+            existing = self.airline_repository.get_by_icao_code(
+                db,
+                update_data["icao_code"],
             )
             if existing:
                 raise AirlineAlreadyExistsError(
@@ -208,16 +200,10 @@ class AirlineService:
                     update_data["country_id"],
                 )
 
-        for field, value in update_data.items():
-            setattr(
-                airline,
-                field,
-                value,
-            )
-
-        return self.airline_repository.save(
-            db,
-            airline,
+        return self.base_crud.update(
+            db=db,
+            obj=airline,
+            data=airline_data,
         )
 
     def delete_airline(
@@ -227,9 +213,9 @@ class AirlineService:
     ) -> None:
         """Delete an airline."""
 
-        airline = self.airline_repository.get_by_id(
-            db,
-            airline_id,
+        airline = self.base_crud.get_by_id(
+            db=db,
+            obj_id=airline_id,
         )
 
         if not airline:
@@ -237,7 +223,7 @@ class AirlineService:
                 airline_id,
             )
 
-        self.airline_repository.delete(
-            db,
-            airline,
+        self.base_crud.delete(
+            db=db,
+            obj=airline,
         )

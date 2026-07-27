@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from .travel_authorization import TravelAuthorization
     from .airline import Airline
     from .airport import Airport
+    from src.models.compliance.visa_rule import VisaRule
 
 
 class Country(BaseModel):
@@ -87,4 +88,17 @@ class Country(BaseModel):
     "Airport",
     back_populates="country",
     )
+
+    nationality_visa_rules: Mapped[list["VisaRule"]] = relationship(
+        "VisaRule",
+        foreign_keys="VisaRule.nationality_country_id",
+        back_populates="nationality_country",
+    )
+
+    destination_visa_rules: Mapped[list["VisaRule"]] = relationship(
+        "VisaRule",
+        foreign_keys="VisaRule.destination_country_id",
+        back_populates="destination_country",
+    )
+
 
