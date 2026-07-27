@@ -6,6 +6,13 @@ from src.services.compliance.rule import RuleService
 from src.repositories.compliance.visa_rule import VisaRuleRepository
 from src.services.compliance.visa_rule import VisaRuleService
 
+from src.repositories.compliance.travel_authorization_rule import (
+    TravelAuthorizationRuleRepository,
+)
+from src.services.compliance.travel_authorization_rule import (
+    TravelAuthorizationRuleService,
+)
+
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
     return RuleRepository()
@@ -34,4 +41,22 @@ def get_visa_rule_service(
     """Get VisaRule service instance."""
     return VisaRuleService(
         visa_rule_repository,
+    )
+
+def get_travel_authorization_rule_repository(
+) -> TravelAuthorizationRuleRepository:
+    """Get TravelAuthorizationRule repository instance."""
+    return TravelAuthorizationRuleRepository()
+
+
+def get_travel_authorization_rule_service(
+    travel_authorization_rule_repository: (
+        TravelAuthorizationRuleRepository
+    ) = Depends(
+        get_travel_authorization_rule_repository,
+    ),
+) -> TravelAuthorizationRuleService:
+    """Get TravelAuthorizationRule service instance."""
+    return TravelAuthorizationRuleService(
+        travel_authorization_rule_repository,
     )

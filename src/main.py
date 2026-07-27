@@ -23,7 +23,9 @@ from src.api.compliance.rule import router as rule_router
 
 from src.api.compliance.visa_rule import router as visa_rule_router
 
-
+from src.api.compliance.travel_authorization_rule import (
+    router as travel_authorization_rule_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -48,7 +50,9 @@ app.include_router(travel_authorization_router)
 
 app.include_router(rule_router)
 app.include_router(visa_rule_router)
-
+app.include_router(
+    travel_authorization_rule_router,
+)
 
 @app.get("/")
 def root():
