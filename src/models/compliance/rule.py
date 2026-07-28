@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.models.compliance.visa_rule import VisaRule
+    from src.models.compliance.passport_rule import PassportRule
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -53,6 +54,12 @@ class Rule(BaseModel):
 
     visa_rules: Mapped[list["VisaRule"]] = relationship(
         "VisaRule",
+        back_populates="rule",
+        uselist=False,
+    )
+
+    passport_rule: Mapped["PassportRule"] = relationship(
+        "PassportRule",
         back_populates="rule",
         uselist=False,
     )

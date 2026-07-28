@@ -2,7 +2,12 @@ from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base_model import BaseModel
-from src.models.compliance.visa_rule import VisaRule
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.models.compliance.visa_rule import VisaRule
+    from src.models.compliance.passport_rule import PassportRule
 
 class PassportType(BaseModel):
     __tablename__ = "passport_types"
@@ -26,4 +31,9 @@ class PassportType(BaseModel):
     description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
+    )
+
+    passport_rules: Mapped[list["PassportRule"]] = relationship(
+        "PassportRule",
+        back_populates="passport_type",
     )

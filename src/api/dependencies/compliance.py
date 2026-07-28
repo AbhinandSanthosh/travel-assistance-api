@@ -13,6 +13,13 @@ from src.services.compliance.travel_authorization_rule import (
     TravelAuthorizationRuleService,
 )
 
+from src.repositories.compliance.passport_rule import (
+    PassportRuleRepository,
+)
+from src.services.compliance.passport_rule import (
+    PassportRuleService,
+)
+
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
     return RuleRepository()
@@ -59,4 +66,19 @@ def get_travel_authorization_rule_service(
     """Get TravelAuthorizationRule service instance."""
     return TravelAuthorizationRuleService(
         travel_authorization_rule_repository,
+    )
+
+def get_passport_rule_repository() -> PassportRuleRepository:
+    """Get PassportRule repository instance."""
+    return PassportRuleRepository()
+
+
+def get_passport_rule_service(
+    passport_rule_repository: PassportRuleRepository = Depends(
+        get_passport_rule_repository,
+    ),
+) -> PassportRuleService:
+    """Get PassportRule service instance."""
+    return PassportRuleService(
+        passport_rule_repository,
     )
