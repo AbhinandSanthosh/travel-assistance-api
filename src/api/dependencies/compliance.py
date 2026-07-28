@@ -46,6 +46,24 @@ from src.repositories.compliance.health_rule_vaccine import (
 from src.services.compliance.health_rule_vaccine import (
     HealthRuleVaccineService,
 )
+from src.repositories.compliance.immigration_rule import (
+    ImmigrationRuleRepository,
+)
+from src.services.compliance.immigration_rule import (
+    ImmigrationRuleService,
+)
+from src.repositories.compliance.customs_rule import (
+    CustomsRuleRepository,
+)
+from src.services.compliance.customs_rule import (
+    CustomsRuleService,
+)
+from src.repositories.compliance.entry_restriction import (
+    EntryRestrictionRepository,
+)
+from src.services.compliance.entry_restriction import (
+    EntryRestrictionService,
+)
 
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
@@ -171,4 +189,58 @@ def get_health_rule_vaccine_service(
     """Get HealthRuleVaccine service instance."""
     return HealthRuleVaccineService(
         health_rule_vaccine_repository,
+    )
+
+def get_immigration_rule_repository(
+) -> ImmigrationRuleRepository:
+    """Get ImmigrationRule repository instance."""
+    return ImmigrationRuleRepository()
+
+
+def get_immigration_rule_service(
+    immigration_rule_repository: (
+        ImmigrationRuleRepository
+    ) = Depends(
+        get_immigration_rule_repository,
+    ),
+) -> ImmigrationRuleService:
+    """Get ImmigrationRule service instance."""
+    return ImmigrationRuleService(
+        immigration_rule_repository,
+    )
+
+def get_customs_rule_repository(
+) -> CustomsRuleRepository:
+    """Get CustomsRule repository instance."""
+    return CustomsRuleRepository()
+
+
+def get_customs_rule_service(
+    customs_rule_repository: (
+        CustomsRuleRepository
+    ) = Depends(
+        get_customs_rule_repository,
+    ),
+) -> CustomsRuleService:
+    """Get CustomsRule service instance."""
+    return CustomsRuleService(
+        customs_rule_repository,
+    )
+
+def get_entry_restriction_repository(
+) -> EntryRestrictionRepository:
+    """Get EntryRestriction repository instance."""
+    return EntryRestrictionRepository()
+
+
+def get_entry_restriction_service(
+    entry_restriction_repository: (
+        EntryRestrictionRepository
+    ) = Depends(
+        get_entry_restriction_repository,
+    ),
+) -> EntryRestrictionService:
+    """Get EntryRestriction service instance."""
+    return EntryRestrictionService(
+        entry_restriction_repository,
     )

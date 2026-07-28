@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from src.models.reference.country import Country
+    from src.models.compliance.customs_rule import CustomsRule
 
 class Currency(BaseModel):
     __tablename__ = "currencies"
@@ -31,3 +32,10 @@ class Currency(BaseModel):
         "Country",
         back_populates="currency",
     )
+
+    customs_rules: Mapped[
+        list["CustomsRule"]
+    ] = relationship(
+        back_populates="currency",
+    )
+

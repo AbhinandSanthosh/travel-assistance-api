@@ -13,6 +13,9 @@ if TYPE_CHECKING:
     from src.models.compliance.health_rule import (
         HealthRule,
     )
+    from src.models.compliance.immigration_rule import ImmigrationRule
+    from src.models.compliance.customs_rule import CustomsRule
+    from src.models.compliance.entry_restriction import EntryRestriction
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -77,5 +80,17 @@ class Rule(BaseModel):
     health_rule: Mapped["HealthRule"] = relationship(
         back_populates="rule",
         uselist=False,
+    )
+
+    immigration_rule: Mapped["ImmigrationRule"] = relationship(
+        back_populates="rule",
+    )
+
+    customs_rule: Mapped["CustomsRule"] = relationship(
+        back_populates="rule",
+    )
+
+    entry_restriction: Mapped["EntryRestriction"] = relationship(
+        back_populates="rule",
     )
 

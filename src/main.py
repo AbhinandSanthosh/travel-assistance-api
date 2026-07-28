@@ -40,6 +40,15 @@ from src.api.compliance.vaccine import (
 from src.api.compliance.health_rule_vaccine import (
     router as health_rule_vaccine_router,
 )
+from src.api.compliance.immigration_rule import (
+    router as immigration_rule_router,
+)
+from src.api.compliance.customs_rule import (
+    router as customs_rule_router,
+)
+from src.api.compliance.entry_restriction import (
+    router as entry_restriction_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -79,6 +88,15 @@ app.include_router(
 )
 app.include_router(
     health_rule_vaccine_router,
+)
+app.include_router(
+    immigration_rule_router,
+)
+app.include_router(
+    customs_rule_router,
+)
+app.include_router(
+    entry_restriction_router,
 )
 
 @app.get("/")

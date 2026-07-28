@@ -17,7 +17,10 @@ if TYPE_CHECKING:
     from src.models.compliance.health_rule import (
         HealthRule,
     )
-
+    from src.models.compliance.immigration_rule import ImmigrationRule
+    from src.models.compliance.customs_rule import CustomsRule
+    from src.models.compliance.entry_restriction import EntryRestriction
+    
 
 class Country(BaseModel):
     __tablename__ = "countries"
@@ -135,5 +138,38 @@ class Country(BaseModel):
     ] = relationship(
         back_populates="nationality_country",
         foreign_keys="HealthRule.nationality_country_id",
+    )
+
+    immigration_rules: Mapped[list["ImmigrationRule"]] = relationship(
+        back_populates="destination_country",
+        foreign_keys="[ImmigrationRule.destination_country_id]",
+    )
+
+    destination_customs_rules: Mapped[
+        list["CustomsRule"]
+    ] = relationship(
+        back_populates="destination_country",
+        foreign_keys="[CustomsRule.destination_country_id]",
+    )
+
+    nationality_customs_rules: Mapped[
+        list["CustomsRule"]
+    ] = relationship(
+        back_populates="nationality_country",
+        foreign_keys="[CustomsRule.nationality_country_id]",
+    )
+
+    destination_entry_restrictions: Mapped[
+        list["EntryRestriction"]
+    ] = relationship(
+        back_populates="destination_country",
+        foreign_keys="EntryRestriction.destination_country_id",
+    )
+
+    nationality_entry_restrictions: Mapped[
+        list["EntryRestriction"]
+    ] = relationship(
+        back_populates="nationality_country",
+        foreign_keys="EntryRestriction.nationality_country_id",
     )
 
