@@ -28,6 +28,19 @@ from src.api.compliance.travel_authorization_rule import (
 )
 from src.api.compliance.passport_rule import router as passport_rule_router
 
+from src.api.compliance.transit_rule import (
+    router as transit_rule_router,
+)
+from src.api.compliance.health_rule import (
+    router as health_rule_router,
+)
+from src.api.compliance.vaccine import (
+    router as vaccine_router,
+)
+from src.api.compliance.health_rule_vaccine import (
+    router as health_rule_vaccine_router,
+)
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -55,6 +68,18 @@ app.include_router(
     travel_authorization_rule_router,
 )
 app.include_router(passport_rule_router)
+app.include_router(
+    transit_rule_router,
+)
+app.include_router(
+    health_rule_router,
+)
+app.include_router(
+    vaccine_router,
+)
+app.include_router(
+    health_rule_vaccine_router,
+)
 
 @app.get("/")
 def root():

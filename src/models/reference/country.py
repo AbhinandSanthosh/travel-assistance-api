@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from .airport import Airport
     from src.models.compliance.visa_rule import VisaRule
     from src.models.compliance.passport_rule import PassportRule
+    from src.models.compliance.transit_rule import TransitRule
+    from src.models.compliance.health_rule import (
+        HealthRule,
+    )
 
 
 class Country(BaseModel):
@@ -105,5 +109,31 @@ class Country(BaseModel):
     destination_passport_rules: Mapped[list["PassportRule"]] = relationship(
         "PassportRule",
         back_populates="destination_country",
+    )
+
+    nationality_transit_rules: Mapped[list["TransitRule"]] = relationship(
+        "TransitRule",
+        foreign_keys="TransitRule.nationality_country_id",
+        back_populates="nationality_country",
+    )
+
+    transit_country_rules: Mapped[list["TransitRule"]] = relationship(
+        "TransitRule",
+        foreign_keys="TransitRule.transit_country_id",
+        back_populates="transit_country",
+    )
+
+    destination_health_rules: Mapped[
+        list["HealthRule"]
+    ] = relationship(
+        back_populates="destination_country",
+        foreign_keys="HealthRule.destination_country_id",
+    )
+
+    nationality_health_rules: Mapped[
+        list["HealthRule"]
+    ] = relationship(
+        back_populates="nationality_country",
+        foreign_keys="HealthRule.nationality_country_id",
     )
 

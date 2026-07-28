@@ -1,0 +1,48 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.db.base import Base
+
+if TYPE_CHECKING:
+    from src.models.compliance.health_rule import HealthRule
+    from src.models.compliance.vaccine import Vaccine
+
+
+class HealthRuleVaccine(
+    Base,
+):
+    """Association between health rules and vaccines."""
+
+    __tablename__ = "health_rule_vaccines"
+
+    id: Mapped[int] = mapped_column(
+        primary_key=True,
+    )
+
+    health_rule_id: Mapped[int] = mapped_column(
+        ForeignKey("health_rules.id"),
+        nullable=False,
+    )
+
+    vaccine_id: Mapped[int] = mapped_column(
+        ForeignKey("vaccines.id"),
+        nullable=False,
+    )
+
+    certificate_required: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
+        nullable=False,
+    )
+
+    health_rule: Mapped["HealthRule"] = relationship(
+        back_populates="health_rule_vaccines",
+    )
+
+    vaccine: Mapped["Vaccine"] = relationship(
+        back_populates="health_rule_vaccines",
+    )

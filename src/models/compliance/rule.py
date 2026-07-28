@@ -9,6 +9,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from src.models.compliance.visa_rule import VisaRule
     from src.models.compliance.passport_rule import PassportRule
+    from src.models.compliance.transit_rule import TransitRule
+    from src.models.compliance.health_rule import (
+        HealthRule,
+    )
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -63,3 +67,15 @@ class Rule(BaseModel):
         back_populates="rule",
         uselist=False,
     )
+
+    transit_rule: Mapped["TransitRule"] = relationship(
+        "TransitRule",
+        back_populates="rule",
+        uselist=False,
+    )
+
+    health_rule: Mapped["HealthRule"] = relationship(
+        back_populates="rule",
+        uselist=False,
+    )
+

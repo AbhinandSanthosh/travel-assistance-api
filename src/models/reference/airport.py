@@ -7,6 +7,7 @@ from src.db.base_model import BaseModel
 
 if TYPE_CHECKING:
     from .country import Country
+    from src.models.compliance.transit_rule import TransitRule
 
 
 class Airport(BaseModel):
@@ -56,4 +57,9 @@ class Airport(BaseModel):
     country: Mapped["Country"] = relationship(
         "Country",
         back_populates="airports",
+    )
+
+    transit_rules: Mapped[list["TransitRule"]] = relationship(
+        "TransitRule",
+        back_populates="transit_airport",
     )

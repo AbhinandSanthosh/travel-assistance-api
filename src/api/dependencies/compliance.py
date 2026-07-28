@@ -20,6 +20,33 @@ from src.services.compliance.passport_rule import (
     PassportRuleService,
 )
 
+from src.repositories.compliance.transit_rule import (
+    TransitRuleRepository,
+)
+from src.services.compliance.transit_rule import (
+    TransitRuleService,
+)
+
+from src.repositories.compliance.health_rule import (
+    HealthRuleRepository,
+)
+from src.services.compliance.health_rule import (
+    HealthRuleService,
+)
+
+from src.repositories.compliance.vaccine import (
+    VaccineRepository,
+)
+from src.services.compliance.vaccine import (
+    VaccineService,
+)
+from src.repositories.compliance.health_rule_vaccine import (
+    HealthRuleVaccineRepository,
+)
+from src.services.compliance.health_rule_vaccine import (
+    HealthRuleVaccineService,
+)
+
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
     return RuleRepository()
@@ -81,4 +108,67 @@ def get_passport_rule_service(
     """Get PassportRule service instance."""
     return PassportRuleService(
         passport_rule_repository,
+    )
+
+def get_transit_rule_repository() -> TransitRuleRepository:
+    """Get TransitRule repository instance."""
+    return TransitRuleRepository()
+
+
+def get_transit_rule_service(
+    transit_rule_repository: TransitRuleRepository = Depends(
+        get_transit_rule_repository,
+    ),
+) -> TransitRuleService:
+    """Get TransitRule service instance."""
+    return TransitRuleService(
+        transit_rule_repository,
+    )
+
+def get_health_rule_repository() -> HealthRuleRepository:
+    """Get HealthRule repository instance."""
+    return HealthRuleRepository()
+
+
+def get_health_rule_service(
+    health_rule_repository: HealthRuleRepository = Depends(
+        get_health_rule_repository,
+    ),
+) -> HealthRuleService:
+    """Get HealthRule service instance."""
+    return HealthRuleService(
+        health_rule_repository,
+    )
+
+def get_vaccine_repository() -> VaccineRepository:
+    """Get Vaccine repository instance."""
+    return VaccineRepository()
+
+
+def get_vaccine_service(
+    vaccine_repository: VaccineRepository = Depends(
+        get_vaccine_repository,
+    ),
+) -> VaccineService:
+    """Get Vaccine service instance."""
+    return VaccineService(
+        vaccine_repository,
+    )
+
+def get_health_rule_vaccine_repository(
+) -> HealthRuleVaccineRepository:
+    """Get HealthRuleVaccine repository instance."""
+    return HealthRuleVaccineRepository()
+
+
+def get_health_rule_vaccine_service(
+    health_rule_vaccine_repository: (
+        HealthRuleVaccineRepository
+    ) = Depends(
+        get_health_rule_vaccine_repository,
+    ),
+) -> HealthRuleVaccineService:
+    """Get HealthRuleVaccine service instance."""
+    return HealthRuleVaccineService(
+        health_rule_vaccine_repository,
     )
