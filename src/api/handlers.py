@@ -2,27 +2,27 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from src.exceptions.base import AppException
-from src.exceptions.country import (
+from src.exceptions.reference.country import (
     CountryAlreadyExistsError,
     CountryNotFoundError,
 )
 
-from src.exceptions.region import (
+from src.exceptions.reference.region import (
     RegionAlreadyExistsError,
     RegionNotFoundError,
 )
 
-from src.exceptions.currency import (
+from src.exceptions.reference.currency import (
     CurrencyAlreadyExistsError,
     CurrencyNotFoundError,
 )
 
-from src.exceptions.passport_type import (
+from src.exceptions.reference.passport_type import (
     PassportTypeAlreadyExistsError,
     PassportTypeNotFoundError,
 )
 
-from src.exceptions.visa_type import (
+from src.exceptions.reference.visa_type import (
     VisaTypeAlreadyExistsError,
     VisaTypeNotFoundError,
 )

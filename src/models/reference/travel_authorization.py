@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .country import Country
+    from src.models.compliance.travel_authorization_rule import TravelAuthorizationRule
+    
 
 class TravelAuthorization(BaseModel):
     __tablename__ = "travel_authorizations"
@@ -38,4 +40,10 @@ class TravelAuthorization(BaseModel):
     destination_country: Mapped["Country"] = relationship(
         "Country",
         back_populates="travel_authorizations",
+    )
+
+    travel_authorization_rule: Mapped["TravelAuthorizationRule"] = relationship(
+        "TravelAuthorizationRule",
+        back_populates="authorization",
+        uselist=False,
     )

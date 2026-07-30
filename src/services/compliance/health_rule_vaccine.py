@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.health_rule_vaccine import (
+from src.exceptions.compliance.health_rule_vaccine import (
     HealthRuleVaccineAlreadyExistsError,
     HealthRuleVaccineNotFoundError,
 )

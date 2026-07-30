@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.travel_authorization_rule import (
+from src.exceptions.compliance.travel_authorization_rule import (
     TravelAuthorizationRuleAlreadyExistsError,
     TravelAuthorizationRuleNotFoundError,
 )

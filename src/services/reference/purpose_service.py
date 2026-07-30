@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.purpose import (
+from src.exceptions.reference.purpose import (
     PurposeAlreadyExistsError,
     PurposeNotFoundError,
 )

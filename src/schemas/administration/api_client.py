@@ -1,0 +1,75 @@
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr
+
+from src.enums.subscription_plan import SubscriptionPlan
+from src.schemas.common import BaseResponseSchema
+
+
+class APIClientBase(BaseModel):
+    """Shared fields for API Client schemas."""
+
+    client_name: str
+
+    company_name: str
+
+    client_code: str
+
+    api_key: str
+
+    contact_name: str | None = None
+
+    contact_email: EmailStr
+
+    contact_phone: str | None = None
+
+    subscription_plan: SubscriptionPlan
+
+    requests_per_minute: int = 60
+
+    status: bool = True
+
+    expires_at: datetime | None = None
+
+
+class APIClientCreate(APIClientBase):
+    """Schema for creating an API client."""
+
+    pass
+
+
+class APIClientUpdate(BaseModel):
+    """Schema for updating an API client."""
+
+    client_name: str | None = None
+
+    company_name: str | None = None
+
+    client_code: str | None = None
+
+    api_key: str | None = None
+
+    contact_name: str | None = None
+
+    contact_email: EmailStr | None = None
+
+    contact_phone: str | None = None
+
+    subscription_plan: SubscriptionPlan | None = None
+
+    requests_per_minute: int | None = None
+
+    status: bool | None = None
+
+    expires_at: datetime | None = None
+
+
+class APIClientResponse(
+    BaseResponseSchema,
+    APIClientBase,
+):
+    """Schema returned for API Client."""
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )

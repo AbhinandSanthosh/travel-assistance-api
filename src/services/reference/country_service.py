@@ -1,11 +1,11 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.country import (
+from src.exceptions.reference.country import (
     CountryAlreadyExistsError,
     CountryNotFoundError,
 )
-from src.exceptions.currency import CurrencyNotFoundError
-from src.exceptions.region import RegionNotFoundError
+from src.exceptions.reference.currency import CurrencyNotFoundError
+from src.exceptions.reference.region import RegionNotFoundError
 
 from src.models.reference.country import Country
 

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.visa_rule import (
+from src.exceptions.compliance.visa_rule import (
     VisaRuleAlreadyExistsError,
     VisaRuleNotFoundError,
 )

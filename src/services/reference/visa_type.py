@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.visa_type import (
+from src.exceptions.reference.visa_type import (
     VisaTypeAlreadyExistsError,
     VisaTypeNotFoundError,
 )

@@ -50,6 +50,46 @@ from src.api.compliance.entry_restriction import (
     router as entry_restriction_router,
 )
 
+from src.api.administration.role import router as role_router
+from src.api.administration.permission import (
+    router as permission_router,
+)
+from src.api.administration.role_permission import (
+    router as role_permission_router,
+)
+from src.api.administration.user import (
+    router as user_router,
+)
+from src.api.rule_management.rule_status import (
+    router as rule_status_router,
+)
+from src.api.rule_management.rule_version import (
+    router as rule_version_router,
+)
+from src.api.rule_management.rule_history import (
+    router as rule_history_router,
+)
+from src.api.rule_management.rule_approval import router as rule_approval_router
+
+from src.api.rule_management.rule_simulation import (
+    router as rule_simulation_router,
+)
+from src.api.administration.api_client import (
+    router as api_client_router,
+)
+from src.api.administration.client_ip_whitelist import (
+    router as client_ip_whitelist_router,
+)
+from src.api.administration.audit_log import (
+    router as audit_log_router,
+)
+from src.api.administration.api_request_log import (
+    router as api_request_log_router,
+)
+from src.api.administration.client_usage_statistics import (
+    router as client_usage_statistics_router,
+)
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -98,6 +138,22 @@ app.include_router(
 app.include_router(
     entry_restriction_router,
 )
+
+app.include_router(role_router)
+app.include_router(permission_router)
+app.include_router(role_permission_router)
+app.include_router(user_router)
+app.include_router(api_client_router)
+app.include_router(client_ip_whitelist_router)
+app.include_router(audit_log_router)
+app.include_router(api_request_log_router)
+app.include_router(client_usage_statistics_router)
+
+app.include_router(rule_status_router)
+app.include_router(rule_version_router)
+app.include_router(rule_history_router)
+app.include_router(rule_approval_router)
+app.include_router(rule_simulation_router)
 
 @app.get("/")
 def root():

@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.airline import (
+from src.exceptions.reference.airline import (
     AirlineAlreadyExistsError,
     AirlineNotFoundError,
 )
-from src.exceptions.country import CountryNotFoundError
+from src.exceptions.reference.country import CountryNotFoundError
 from src.models.reference.airline import Airline
 from src.repositories.reference.airline_repository import (
     AirlineRepository,

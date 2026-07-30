@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from src.models.compliance.immigration_rule import ImmigrationRule
     from src.models.compliance.customs_rule import CustomsRule
     from src.models.compliance.entry_restriction import EntryRestriction
+    from src.models.compliance.travel_authorization_rule import TravelAuthorizationRule
     
 
 class Country(BaseModel):
@@ -171,5 +172,17 @@ class Country(BaseModel):
     ] = relationship(
         back_populates="nationality_country",
         foreign_keys="EntryRestriction.nationality_country_id",
+    )
+
+    travel_authorization_nationality_rules: Mapped[list["TravelAuthorizationRule"]] = relationship(
+        "TravelAuthorizationRule",
+        foreign_keys="TravelAuthorizationRule.nationality_country_id",
+        back_populates="nationality_country",
+    )
+
+    travel_authorization_destination_rules: Mapped[list["TravelAuthorizationRule"]] = relationship(
+        "TravelAuthorizationRule",
+        foreign_keys="TravelAuthorizationRule.destination_country_id",
+        back_populates="destination_country",
     )
 

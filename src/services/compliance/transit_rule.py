@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.transit_rule import (
+from src.exceptions.compliance.transit_rule import (
     TransitRuleAlreadyExistsError,
     TransitRuleNotFoundError,
 )

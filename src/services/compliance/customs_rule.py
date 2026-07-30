@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.customs_rule import (
+from src.exceptions.compliance.customs_rule import (
     CustomsRuleAlreadyExistsError,
     CustomsRuleNotFoundError,
 )

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.entry_restriction import (
+from src.exceptions.compliance.entry_restriction import (
     EntryRestrictionAlreadyExistsError,
     EntryRestrictionNotFoundError,
 )

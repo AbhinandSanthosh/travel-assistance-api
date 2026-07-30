@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.passport_rule import (
+from src.exceptions.compliance.passport_rule import (
     PassportRuleAlreadyExistsError,
     PassportRuleNotFoundError,
 )

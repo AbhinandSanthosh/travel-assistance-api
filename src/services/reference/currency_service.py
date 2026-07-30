@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.currency import (
+from src.exceptions.reference.currency import (
     CurrencyAlreadyExistsError,
     CurrencyNotFoundError,
 )

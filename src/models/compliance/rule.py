@@ -16,6 +16,12 @@ if TYPE_CHECKING:
     from src.models.compliance.immigration_rule import ImmigrationRule
     from src.models.compliance.customs_rule import CustomsRule
     from src.models.compliance.entry_restriction import EntryRestriction
+    from src.models.compliance.travel_authorization_rule import TravelAuthorizationRule
+    from src.models.rule_management.rule_status import RuleStatus
+    from src.models.rule_management.rule_version import RuleVersion
+    from src.models.rule_management.rule_history import RuleHistory
+    from src.models.rule_management.rule_approval import RuleApproval
+    from src.models.rule_management.rule_simulation import RuleSimulation
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -91,6 +97,37 @@ class Rule(BaseModel):
     )
 
     entry_restriction: Mapped["EntryRestriction"] = relationship(
+        back_populates="rule",
+    )
+
+    travel_authorization_rule: Mapped["TravelAuthorizationRule"] = relationship(
+        "TravelAuthorizationRule",
+        back_populates="rule",
+        uselist=False,
+    )
+
+    status: Mapped["RuleStatus"] = relationship(
+        "RuleStatus",
+        back_populates="rules",
+    )
+
+    rule_versions: Mapped[list["RuleVersion"]] = relationship(
+        "RuleVersion",
+        back_populates="rule",
+    )
+
+    rule_history: Mapped[list["RuleHistory"]] = relationship(
+        "RuleHistory",
+        back_populates="rule",
+    )
+
+    rule_approvals: Mapped[list["RuleApproval"]] = relationship(
+        "RuleApproval",
+        back_populates="rule",
+    )
+
+    rule_simulations: Mapped[list["RuleSimulation"]] = relationship(
+        "RuleSimulation",
         back_populates="rule",
     )
 

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.immigration_rule import (
+from src.exceptions.compliance.immigration_rule import (
     ImmigrationRuleAlreadyExistsError,
     ImmigrationRuleNotFoundError,
 )

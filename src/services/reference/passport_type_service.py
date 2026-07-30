@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.passport_type import (
+from src.exceptions.reference.passport_type import (
     PassportTypeAlreadyExistsError,
     PassportTypeNotFoundError,
 )

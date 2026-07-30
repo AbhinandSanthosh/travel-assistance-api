@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.rule import (
+from src.exceptions.compliance.rule import (
     RuleAlreadyExistsError,
     RuleNotFoundError,
 )

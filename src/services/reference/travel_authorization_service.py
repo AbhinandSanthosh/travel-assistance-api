@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.country import CountryNotFoundError
-from src.exceptions.travel_authorization import (
+from src.exceptions.reference.country import CountryNotFoundError
+from src.exceptions.reference.travel_authorization import (
     TravelAuthorizationAlreadyExistsError,
     TravelAuthorizationNotFoundError,
 )

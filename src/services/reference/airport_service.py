@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.airport import (
+from src.exceptions.reference.airport import (
     AirportAlreadyExistsError,
     AirportNotFoundError,
 )
-from src.exceptions.country import CountryNotFoundError
+from src.exceptions.reference.country import CountryNotFoundError
 from src.models.reference.airport import Airport
 from src.repositories.reference.airport_repository import (
     AirportRepository,

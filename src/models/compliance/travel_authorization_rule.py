@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from src.models.reference.travel_authorization import (
         TravelAuthorization,
     )
+    
 
 
 class TravelAuthorizationRule(BaseModel):

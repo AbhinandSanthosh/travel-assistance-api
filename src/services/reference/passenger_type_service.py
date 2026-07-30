@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.passenger_type import (
+from src.exceptions.reference.passenger_type import (
     PassengerTypeAlreadyExistsError,
     PassengerTypeNotFoundError,
 )

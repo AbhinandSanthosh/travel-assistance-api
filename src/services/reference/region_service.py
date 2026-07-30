@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from src.exceptions.region import (
+from src.exceptions.reference.region import (
     RegionAlreadyExistsError,
     RegionNotFoundError,
 )
