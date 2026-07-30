@@ -89,6 +89,30 @@ from src.api.administration.api_request_log import (
 from src.api.administration.client_usage_statistics import (
     router as client_usage_statistics_router,
 )
+from src.api.data_collection.source_registry import (
+    router as source_registry_router,
+)
+from src.api.data_collection.source_document import (
+    router as source_document_router,
+)
+from src.api.data_collection.document_version import (
+    router as document_version_router,
+)
+from src.api.data_collection.collection_log import (
+    router as collection_log_router,
+)
+from src.api.data_collection.document_validation import (
+    router as document_validation_router,
+)
+from src.api.data_collection.ai_extraction import (
+    router as ai_extraction_router,
+)
+from src.api.compliance.compliance_check import (
+    router as compliance_check_router,
+)
+from src.api.compliance.rule_execution_log import (
+    router as rule_execution_log_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -138,6 +162,8 @@ app.include_router(
 app.include_router(
     entry_restriction_router,
 )
+app.include_router(compliance_check_router)
+app.include_router(rule_execution_log_router)
 
 app.include_router(role_router)
 app.include_router(permission_router)
@@ -148,6 +174,13 @@ app.include_router(client_ip_whitelist_router)
 app.include_router(audit_log_router)
 app.include_router(api_request_log_router)
 app.include_router(client_usage_statistics_router)
+
+app.include_router(source_registry_router)
+app.include_router(source_document_router)
+app.include_router(document_version_router)
+app.include_router(collection_log_router)
+app.include_router(document_validation_router)
+app.include_router(ai_extraction_router)
 
 app.include_router(rule_status_router)
 app.include_router(rule_version_router)

@@ -21,6 +21,10 @@ if TYPE_CHECKING:
     from src.models.compliance.customs_rule import CustomsRule
     from src.models.compliance.entry_restriction import EntryRestriction
     from src.models.compliance.travel_authorization_rule import TravelAuthorizationRule
+
+    from src.models.data_collection.source_registry import (
+        SourceRegistry,
+    )
     
 
 class Country(BaseModel):
@@ -184,5 +188,10 @@ class Country(BaseModel):
         "TravelAuthorizationRule",
         foreign_keys="TravelAuthorizationRule.destination_country_id",
         back_populates="destination_country",
+    )
+
+    source_registries: Mapped[list["SourceRegistry"]] = relationship(
+        "SourceRegistry",
+        back_populates="country",
     )
 

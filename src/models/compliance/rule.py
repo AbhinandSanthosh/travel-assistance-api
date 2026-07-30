@@ -22,6 +22,9 @@ if TYPE_CHECKING:
     from src.models.rule_management.rule_history import RuleHistory
     from src.models.rule_management.rule_approval import RuleApproval
     from src.models.rule_management.rule_simulation import RuleSimulation
+    from src.models.compliance.rule_execution_log import (
+        RuleExecutionLog,
+    )
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -128,6 +131,13 @@ class Rule(BaseModel):
 
     rule_simulations: Mapped[list["RuleSimulation"]] = relationship(
         "RuleSimulation",
+        back_populates="rule",
+    )
+
+    rule_execution_logs: Mapped[
+        list["RuleExecutionLog"]
+    ] = relationship(
+        "RuleExecutionLog",
         back_populates="rule",
     )
 

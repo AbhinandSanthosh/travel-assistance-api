@@ -64,6 +64,18 @@ from src.repositories.compliance.entry_restriction import (
 from src.services.compliance.entry_restriction import (
     EntryRestrictionService,
 )
+from src.repositories.compliance.compliance_check import (
+    ComplianceCheckRepository,
+)
+from src.services.compliance.compliance_check import (
+    ComplianceCheckService,
+)
+from src.repositories.compliance.rule_execution_log import (
+    RuleExecutionLogRepository,
+)
+from src.services.compliance.rule_execution_log import (
+    RuleExecutionLogService,
+)
 
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
@@ -244,3 +256,29 @@ def get_entry_restriction_service(
     return EntryRestrictionService(
         entry_restriction_repository,
     )
+
+def get_compliance_check_repository() -> (
+    ComplianceCheckRepository
+):
+    return ComplianceCheckRepository()
+
+
+def get_compliance_check_service(
+    repository: ComplianceCheckRepository = Depends(
+        get_compliance_check_repository,
+    ),
+) -> ComplianceCheckService:
+    return ComplianceCheckService(repository)
+
+def get_rule_execution_log_repository() -> (
+    RuleExecutionLogRepository
+):
+    return RuleExecutionLogRepository()
+
+
+def get_rule_execution_log_service(
+    repository: RuleExecutionLogRepository = Depends(
+        get_rule_execution_log_repository,
+    ),
+) -> RuleExecutionLogService:
+    return RuleExecutionLogService(repository)
