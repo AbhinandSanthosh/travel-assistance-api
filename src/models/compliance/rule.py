@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from src.models.compliance.rule_execution_log import (
         RuleExecutionLog,
     )
+    from src.models.data_collection.source_registry import SourceRegistry
 
 class Rule(BaseModel):
     __tablename__ = "rules"
@@ -68,7 +69,7 @@ class Rule(BaseModel):
         nullable=True,
     )
 
-    visa_rules: Mapped[list["VisaRule"]] = relationship(
+    visa_rule: Mapped["VisaRule"] = relationship(
         "VisaRule",
         back_populates="rule",
         uselist=False,
@@ -139,5 +140,10 @@ class Rule(BaseModel):
     ] = relationship(
         "RuleExecutionLog",
         back_populates="rule",
+    )
+
+    source: Mapped["SourceRegistry"] = relationship(
+        "SourceRegistry",
+        back_populates="rules",
     )
 

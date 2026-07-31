@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import Enum, ForeignKey, JSON, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import datetime
 
 from src.db.base_model import BaseModel
 from src.enums.simulation_status import SimulationStatus
@@ -56,6 +57,10 @@ class RuleSimulation(BaseModel):
 
     executed_by: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    executed_at: Mapped[datetime] = mapped_column(
         nullable=False,
     )
 

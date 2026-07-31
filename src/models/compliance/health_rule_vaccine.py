@@ -10,6 +10,7 @@ from src.db.base import Base
 if TYPE_CHECKING:
     from src.models.compliance.health_rule import HealthRule
     from src.models.compliance.vaccine import Vaccine
+    from src.models.administration.user import User
 
 
 class HealthRuleVaccine(
@@ -45,4 +46,24 @@ class HealthRuleVaccine(
 
     vaccine: Mapped["Vaccine"] = relationship(
         back_populates="health_rule_vaccines",
+    )
+
+    created_by: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+    )
+
+    updated_by: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+    )
+
+    created_by_user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[created_by],
+        back_populates="created_health_rule_vaccines",
+    )
+
+    updated_by_user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[updated_by],
+        back_populates="updated_health_rule_vaccines",
     )

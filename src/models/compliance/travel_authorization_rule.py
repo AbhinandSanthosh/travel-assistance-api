@@ -97,12 +97,12 @@ class TravelAuthorizationRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="travel_authorization_rule",
+        back_populates="travel_authorization_rules",
     )
 
-    authorization: Mapped["TravelAuthorization"] = relationship(
+    travel_authorization: Mapped["TravelAuthorization"] = relationship(
         "TravelAuthorization",
-        back_populates="travel_authorization_rule",
+        back_populates="travel_authorization_rules",
     )
 
     nationality_country: Mapped["Country"] = relationship(

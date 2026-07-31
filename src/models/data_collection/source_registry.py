@@ -12,6 +12,8 @@ if TYPE_CHECKING:
     from src.models.data_collection.collection_log import CollectionLog
     from src.models.data_collection.source_document import SourceDocument
     from src.models.reference.country import Country
+    from src.models.compliance.entry_restriction import EntryRestriction
+    from src.models.compliance.rule import Rule
 
 
 class SourceRegistry(BaseModel):
@@ -72,4 +74,14 @@ class SourceRegistry(BaseModel):
     collection_logs: Mapped[list["CollectionLog"]] = relationship(
         "CollectionLog",
         back_populates="source_registry",
+    )
+
+    rules: Mapped[list["Rule"]] = relationship(
+        "Rule",
+        back_populates="source",
+    )
+
+    entry_restrictions: Mapped[list["EntryRestriction"]] = relationship(
+        "EntryRestriction",
+        back_populates="source",
     )

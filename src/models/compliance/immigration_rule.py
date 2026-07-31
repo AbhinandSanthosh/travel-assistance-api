@@ -11,6 +11,7 @@ from src.db.base import Base
 if TYPE_CHECKING:
     from src.models.compliance.rule import Rule
     from src.models.reference.country import Country
+    from src.models.administration.user import User
 
 
 class ImmigrationRule(
@@ -109,4 +110,26 @@ class ImmigrationRule(
     destination_country: Mapped["Country"] = relationship(
         back_populates="immigration_rules",
         foreign_keys=[destination_country_id],
+    )
+
+    created_by: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    updated_by: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        nullable=False,
+    )
+
+    created_by_user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[created_by],
+        back_populates="created_immigration_rules",
+    )
+
+    updated_by_user: Mapped["User"] = relationship(
+        "User",
+        foreign_keys=[updated_by],
+        back_populates="updated_immigration_rules",
     )

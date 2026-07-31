@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from src.models.administration.user import User
     from src.models.rule_management.rule_history import RuleHistory
     from src.models.rule_management.rule_simulation import RuleSimulation
+    from src.models.compliance.compliance_check import ComplianceCheck
 
 
 class RuleVersion(BaseModel):
@@ -77,5 +78,10 @@ class RuleVersion(BaseModel):
 
     rule_simulations: Mapped[list["RuleSimulation"]] = relationship(
         "RuleSimulation",
+        back_populates="rule_version",
+    )
+
+    compliance_checks: Mapped[list["ComplianceCheck"]] = relationship(
+        "ComplianceCheck",
         back_populates="rule_version",
     )

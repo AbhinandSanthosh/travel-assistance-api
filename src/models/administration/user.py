@@ -13,6 +13,10 @@ if TYPE_CHECKING:
     from src.models.rule_management.rule_approval import RuleApproval
     from src.models.rule_management.rule_simulation import RuleSimulation
     from src.models.administration.audit_log import AuditLog
+    from src.models.compliance.health_rule_vaccine import (
+        HealthRuleVaccine,
+    )
+    from src.models.compliance.immigration_rule import ImmigrationRule
 
 
 class User(BaseModel):
@@ -87,4 +91,28 @@ class User(BaseModel):
     audit_logs: Mapped[list["AuditLog"]] = relationship(
         "AuditLog",
         back_populates="user",
+    )
+
+    created_health_rule_vaccines: Mapped[list["HealthRuleVaccine"]] = relationship(
+        "HealthRuleVaccine",
+        foreign_keys="HealthRuleVaccine.created_by",
+        back_populates="created_by_user",
+    )
+
+    updated_health_rule_vaccines: Mapped[list["HealthRuleVaccine"]] = relationship(
+        "HealthRuleVaccine",
+        foreign_keys="HealthRuleVaccine.updated_by",
+        back_populates="updated_by_user",
+    )
+
+    created_immigration_rules: Mapped[list["ImmigrationRule"]] = relationship(
+        "ImmigrationRule",
+        foreign_keys="ImmigrationRule.created_by",
+        back_populates="created_by_user",
+    )
+
+    updated_immigration_rules: Mapped[list["ImmigrationRule"]] = relationship(
+        "ImmigrationRule",
+        foreign_keys="ImmigrationRule.updated_by",
+        back_populates="updated_by_user",
     )

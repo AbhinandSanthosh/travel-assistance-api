@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from src.models.administration.client_usage_statistics import (
         ClientUsageStatistics,
     )
+    from src.models.compliance.compliance_check import ComplianceCheck
 
 class APIClient(BaseModel):
     """API Client model."""
@@ -91,4 +92,9 @@ class APIClient(BaseModel):
     client_usage_statistics: Mapped[list["ClientUsageStatistics"]] = relationship(
         "ClientUsageStatistics",
         back_populates="api_client",
+    )
+
+    compliance_checks: Mapped[list["ComplianceCheck"]] = relationship(
+        "ComplianceCheck",
+        back_populates="client",
     )

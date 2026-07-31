@@ -114,7 +114,7 @@ class VisaRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="visa_rules",
+        back_populates="visa_rule",
     )
 
     nationality_country: Mapped["Country"] = relationship(

@@ -12,6 +12,7 @@ from src.db.base import Base
 if TYPE_CHECKING:
     from src.models.compliance.rule import Rule
     from src.models.reference.country import Country
+    from src.models.data_collection.source_registry import SourceRegistry
 
 
 
@@ -91,5 +92,10 @@ class EntryRestriction(
     nationality_country: Mapped["Country"] = relationship(
         back_populates="nationality_entry_restrictions",
         foreign_keys=[nationality_country_id],
+    )
+
+    source: Mapped["SourceRegistry"] = relationship(
+        "SourceRegistry",
+        back_populates="entry_restrictions",
     )
 

@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from src.models.rule_management.rule_version import RuleVersion
 
 
+
 class ComplianceCheck(BaseModel):
     """Compliance Check model."""
 
@@ -58,10 +59,16 @@ class ComplianceCheck(BaseModel):
         nullable=False,
     )
 
+    rule_version: Mapped["RuleVersion"] = relationship(
+        "RuleVersion",
+    )
+
     client: Mapped["APIClient"] = relationship(
         "APIClient",
+        back_populates="compliance_checks",
     )
 
     rule_version: Mapped["RuleVersion"] = relationship(
         "RuleVersion",
+        back_populates="compliance_checks",
     )

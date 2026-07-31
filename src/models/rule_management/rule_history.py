@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class RuleHistory(BaseModel):
     """Rule History model."""
 
-    __tablename__ = "rule_histories"
+    __tablename__ = "rule_history"
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),

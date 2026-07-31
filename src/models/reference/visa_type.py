@@ -2,7 +2,10 @@ from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db.base_model import BaseModel
-from src.models.compliance.visa_rule import VisaRule
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.models.compliance.visa_rule import VisaRule
 
 class VisaType(BaseModel):
     __tablename__ = "visa_types"
