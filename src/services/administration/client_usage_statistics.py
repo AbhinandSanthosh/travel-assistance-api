@@ -50,7 +50,8 @@ class ClientUsageStatisticsService:
 
         return self.base_crud.create(
             db=db,
-            obj_in=statistics_data,
+            model=ClientUsageStatistics,
+            data=statistics_data,
         )
 
     def get_client_usage_statistics(
@@ -107,6 +108,6 @@ class ClientUsageStatisticsService:
 
         return self.base_crud.update(
             db=db,
-            db_obj=statistics,
-            obj_in=statistics_data,
+            obj=statistics,
+            data=statistics_data,
         )

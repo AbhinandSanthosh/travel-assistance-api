@@ -44,7 +44,8 @@ class APIClientService:
 
         return self.base_crud.create(
             db=db,
-            obj_in=client_data,
+            model=APIClient,
+            data=client_data,
         )
 
     def get_api_client(
@@ -101,8 +102,8 @@ class APIClientService:
 
         return self.base_crud.update(
             db=db,
-            db_obj=client,
-            obj_in=client_data,
+            obj=client,
+            data=client_data,
         )
 
     def delete_api_client(
@@ -119,5 +120,5 @@ class APIClientService:
 
         self.base_crud.delete(
             db=db,
-            obj_id=client.id,
+            obj=client,
         )

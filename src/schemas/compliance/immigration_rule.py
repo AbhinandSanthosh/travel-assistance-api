@@ -43,6 +43,14 @@ class ImmigrationRuleBase(BaseModel):
         description="Additional notes for the immigration rule",
     )
 
+    created_by: int = Field(
+        description="User who created the rule",
+    )
+
+    updated_by: int = Field(
+        description="User who last updated the rule",
+    )
+
 
 class ImmigrationRuleCreate(ImmigrationRuleBase):
     """Schema for creating an immigration rule."""
@@ -79,8 +87,11 @@ class ImmigrationRuleUpdate(BaseModel):
 
     remarks: str | None = None
 
-    active: bool | None = None
+    created_by: int | None = None
 
+    updated_by: int | None = None
+
+    active: bool | None = None
 
 class ImmigrationRuleResponse(
     BaseResponseSchema,

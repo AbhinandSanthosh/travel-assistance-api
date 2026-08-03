@@ -1,5 +1,8 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.data_collection.source_registry import (
     SourceRegistryAuthorityNameAlreadyExistsError,
+    SourceRegistryNotFoundError,
     SourceRegistryWebsiteAlreadyExistsError,
 )
 from src.models.data_collection.source_registry import SourceRegistry
@@ -23,84 +26,130 @@ class SourceRegistryService:
         self.repository = repository
         self.base_crud = BaseCrudService(repository)
 
-    async def create_source_registry(
+    def create_source_registry(
         self,
+        db: Session,
         data: SourceRegistryCreate,
     ) -> SourceRegistry:
         """Create a source registry."""
 
-        authority = await self.repository.get_by_authority_name(
+        authority = self.repository.get_by_authority_name(
+            db,
             data.authority_name,
         )
+
         if authority:
             raise SourceRegistryAuthorityNameAlreadyExistsError(
                 data.authority_name,
             )
 
-        website = await self.repository.get_by_website(
+        website = self.repository.get_by_website(
+            db,
             data.website,
         )
+
         if website:
             raise SourceRegistryWebsiteAlreadyExistsError(
                 data.website,
             )
 
-        return await self.base_crud.create(data)
+        return self.base_crud.create(
+            db=db,
+            model=SourceRegistry,
+            data=data,
+        )
 
-    async def get_source_registry(
+    def get_source_registry(
         self,
+        db: Session,
         registry_id: int,
     ) -> SourceRegistry:
         """Get a source registry by ID."""
-        return await self.base_crud.get(registry_id)
 
-    async def get_all_source_registries(
+        registry = self.base_crud.get_by_id(
+            db=db,
+            obj_id=registry_id,
+        )
+
+        if registry is None:
+            raise SourceRegistryNotFoundError(
+                registry_id,
+            )
+
+        return registry
+
+    def get_all_source_registries(
         self,
+        db: Session,
     ) -> list[SourceRegistry]:
         """Get all source registries."""
-        return await self.base_crud.get_all()
 
-    async def update_source_registry(
+        return self.base_crud.get_all(db)
+
+    def update_source_registry(
         self,
+        db: Session,
         registry_id: int,
         data: SourceRegistryUpdate,
     ) -> SourceRegistry:
         """Update a source registry."""
 
-        existing = await self.base_crud.get(registry_id)
+        registry = self.get_source_registry(
+            db=db,
+            registry_id=registry_id,
+        )
+
+        update_data = data.model_dump(
+            exclude_unset=True,
+        )
 
         if (
-            data.authority_name
-            and data.authority_name != existing.authority_name
+            "authority_name" in update_data
+            and update_data["authority_name"] != registry.authority_name
         ):
-            authority = await self.repository.get_by_authority_name(
-                data.authority_name,
+            authority = self.repository.get_by_authority_name(
+                db,
+                update_data["authority_name"],
             )
+
             if authority:
                 raise SourceRegistryAuthorityNameAlreadyExistsError(
-                    data.authority_name,
+                    update_data["authority_name"],
                 )
 
         if (
-            data.website
-            and data.website != existing.website
+            "website" in update_data
+            and update_data["website"] != registry.website
         ):
-            website = await self.repository.get_by_website(
-                data.website,
+            website = self.repository.get_by_website(
+                db,
+                update_data["website"],
             )
+
             if website:
                 raise SourceRegistryWebsiteAlreadyExistsError(
-                data.website,
-            )
+                    update_data["website"],
+                )
 
-        return await self.base_crud.update(
-            registry_id,
-            data,
+        return self.base_crud.update(
+            db=db,
+            obj=registry,
+            data=data,
         )
 
-    async def delete_source_registry(
+    def delete_source_registry(
         self,
+        db: Session,
         registry_id: int,
     ) -> None:
         """Delete a source registry."""
-        await self.base_crud.delete(registry_id)
+
+        registry = self.get_source_registry(
+            db=db,
+            registry_id=registry_id,
+        )
+
+        self.base_crud.delete(
+            db=db,
+            obj=registry,
+        )

@@ -12,6 +12,10 @@ class HealthRuleVaccineBase(BaseModel):
 
     certificate_required: bool = False
 
+    created_by: int
+
+    updated_by: int
+
 
 class HealthRuleVaccineCreate(
     HealthRuleVaccineBase,
@@ -21,9 +25,7 @@ class HealthRuleVaccineCreate(
     pass
 
 
-class HealthRuleVaccineUpdate(
-    BaseModel,
-):
+class HealthRuleVaccineUpdate(BaseModel):
     """Schema for updating a health rule vaccine."""
 
     health_rule_id: int | None = None
@@ -31,6 +33,10 @@ class HealthRuleVaccineUpdate(
     vaccine_id: int | None = None
 
     certificate_required: bool | None = None
+
+    created_by: int | None = None
+
+    updated_by: int | None = None
 
     active: bool | None = None
 

@@ -1,3 +1,5 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.data_collection.document_validation import (
     DocumentValidationNotFoundError,
 )
@@ -22,60 +24,80 @@ class DocumentValidationService:
         repository: DocumentValidationRepository,
     ) -> None:
         self.repository = repository
-        self.base_crud = BaseCrudService(
-            repository,
-        )
+        self.base_crud = BaseCrudService(repository)
 
-    async def create_document_validation(
+    def create_document_validation(
         self,
+        db: Session,
         data: DocumentValidationCreate,
     ) -> DocumentValidation:
-        return await self.base_crud.create(data)
+        """Create a document validation."""
 
-    async def get_document_validation(
+        return self.base_crud.create(
+            db=db,
+            model=DocumentValidation,
+            data=data,
+        )
+
+    def get_document_validation(
         self,
+        db: Session,
         validation_id: int,
     ) -> DocumentValidation:
-        validation = await self.base_crud.get_by_id(
-            validation_id,
+        """Get document validation by ID."""
+
+        validation = self.base_crud.get_by_id(
+            db=db,
+            obj_id=validation_id,
         )
 
         if validation is None:
-            raise DocumentValidationNotFoundError()
+            raise DocumentValidationNotFoundError(
+                validation_id,
+            )
 
         return validation
 
-    async def get_document_validations(
+    def get_document_validations(
         self,
+        db: Session,
     ) -> list[DocumentValidation]:
-        return await self.base_crud.get_all()
+        """Get all document validations."""
 
-    async def update_document_validation(
+        return self.base_crud.get_all(db)
+
+    def update_document_validation(
         self,
+        db: Session,
         validation_id: int,
         data: DocumentValidationUpdate,
     ) -> DocumentValidation:
-        validation = await self.base_crud.get_by_id(
-            validation_id,
+        """Update document validation."""
+
+        validation = self.get_document_validation(
+            db=db,
+            validation_id=validation_id,
         )
 
-        if validation is None:
-            raise DocumentValidationNotFoundError()
-
-        return await self.base_crud.update(
-            validation,
-            data,
+        return self.base_crud.update(
+            db=db,
+            obj=validation,
+            data=data,
         )
 
-    async def delete_document_validation(
+    def delete_document_validation(
         self,
+        db: Session,
         validation_id: int,
     ) -> None:
-        validation = await self.base_crud.get_by_id(
-            validation_id,
+        """Delete document validation."""
+
+        validation = self.get_document_validation(
+            db=db,
+            validation_id=validation_id,
         )
 
-        if validation is None:
-            raise DocumentValidationNotFoundError()
-
-        await self.base_crud.delete(validation)
+        self.base_crud.delete(
+            db=db,
+            obj=validation,
+        )

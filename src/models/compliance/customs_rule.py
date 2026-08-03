@@ -7,7 +7,7 @@ from sqlalchemy import Boolean, ForeignKey, Numeric, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.db.base_model import BaseModel
 
 if TYPE_CHECKING:
     from src.models.compliance.rule import Rule
@@ -15,16 +15,10 @@ if TYPE_CHECKING:
     from src.models.reference.currency import Currency
 
 
-class CustomsRule(
-    Base,
-):
+class CustomsRule(BaseModel):
     """Customs requirements for entry into a destination country."""
 
     __tablename__ = "customs_rules"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-    )
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
@@ -52,9 +46,7 @@ class CustomsRule(
         nullable=True,
     )
 
-    currency_limit_amount: Mapped[
-        Decimal | None
-    ] = mapped_column(
+    currency_limit_amount: Mapped[Decimal | None] = mapped_column(
         Numeric,
         nullable=True,
     )
@@ -64,9 +56,7 @@ class CustomsRule(
         nullable=True,
     )
 
-    currency_declaration_required: Mapped[
-        bool
-    ] = mapped_column(
+    currency_declaration_required: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
         nullable=False,

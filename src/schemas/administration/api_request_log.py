@@ -1,10 +1,10 @@
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 from src.enums.http_method import HTTPMethod
 from src.schemas.common import BaseResponseSchema
 
 
-class APIRequestLogBase(BaseResponseSchema):
+class APIRequestLogBase(BaseModel):
     """Base schema for API Request Log."""
 
     client_id: int

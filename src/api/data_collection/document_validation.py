@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
 
 from src.api.dependencies.data_collection import (
     get_document_validation_service,
 )
+from src.db.session import get_db
 from src.models.data_collection.document_validation import (
     DocumentValidation,
 )
@@ -26,39 +28,51 @@ router = APIRouter(
     response_model=DocumentValidationResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_document_validation(
+def create_document_validation(
     data: DocumentValidationCreate,
+    db: Session = Depends(get_db),
     service: DocumentValidationService = Depends(
         get_document_validation_service,
     ),
 ) -> DocumentValidation:
-    return await service.create_document_validation(data)
+
+    return service.create_document_validation(
+        db=db,
+        data=data,
+    )
 
 
 @router.get(
     "/",
     response_model=list[DocumentValidationResponse],
 )
-async def get_document_validations(
+def get_document_validations(
+    db: Session = Depends(get_db),
     service: DocumentValidationService = Depends(
         get_document_validation_service,
     ),
 ) -> list[DocumentValidation]:
-    return await service.get_document_validations()
+
+    return service.get_document_validations(
+        db=db,
+    )
 
 
 @router.get(
     "/{validation_id}",
     response_model=DocumentValidationResponse,
 )
-async def get_document_validation(
+def get_document_validation(
     validation_id: int,
+    db: Session = Depends(get_db),
     service: DocumentValidationService = Depends(
         get_document_validation_service,
     ),
 ) -> DocumentValidation:
-    return await service.get_document_validation(
-        validation_id,
+
+    return service.get_document_validation(
+        db=db,
+        validation_id=validation_id,
     )
 
 
@@ -66,16 +80,19 @@ async def get_document_validation(
     "/{validation_id}",
     response_model=DocumentValidationResponse,
 )
-async def update_document_validation(
+def update_document_validation(
     validation_id: int,
     data: DocumentValidationUpdate,
+    db: Session = Depends(get_db),
     service: DocumentValidationService = Depends(
         get_document_validation_service,
     ),
 ) -> DocumentValidation:
-    return await service.update_document_validation(
-        validation_id,
-        data,
+
+    return service.update_document_validation(
+        db=db,
+        validation_id=validation_id,
+        data=data,
     )
 
 
@@ -83,12 +100,15 @@ async def update_document_validation(
     "/{validation_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_document_validation(
+def delete_document_validation(
     validation_id: int,
+    db: Session = Depends(get_db),
     service: DocumentValidationService = Depends(
         get_document_validation_service,
     ),
 ) -> None:
-    await service.delete_document_validation(
-        validation_id,
+
+    service.delete_document_validation(
+        db=db,
+        validation_id=validation_id,
     )

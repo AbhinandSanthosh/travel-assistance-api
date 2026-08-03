@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.db.base_model import BaseModel
 
 if TYPE_CHECKING:
     from src.models.compliance.health_rule import HealthRule
@@ -14,15 +14,11 @@ if TYPE_CHECKING:
 
 
 class HealthRuleVaccine(
-    Base,
+    BaseModel,
 ):
     """Association between health rules and vaccines."""
 
     __tablename__ = "health_rule_vaccines"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-    )
 
     health_rule_id: Mapped[int] = mapped_column(
         ForeignKey("health_rules.id"),
@@ -50,10 +46,12 @@ class HealthRuleVaccine(
 
     created_by: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
+        nullable=False,
     )
 
     updated_by: Mapped[int] = mapped_column(
         ForeignKey("users.id"),
+        nullable=False,
     )
 
     created_by_user: Mapped["User"] = relationship(

@@ -23,7 +23,7 @@ from src.schemas.administration.user import (
 )
 
 from src.services.base_crud_service import BaseCrudService
-
+from src.models.administration.user import User
 
 class UserService:
     """Service for User business logic."""
@@ -81,9 +81,11 @@ class UserService:
             payload.pop("password")
         )
 
-        return self.base_crud.create(
-            db,
-            payload,
+        user = User(**payload)
+
+        return self.user_repository.create(
+            db=db,
+            obj=user,
         )
 
     def get_all_users(
@@ -175,10 +177,13 @@ class UserService:
                 update_data.pop("password")
             )
 
-        return self.base_crud.update(
-            db,
-            user,
-            update_data,
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
+        return self.user_repository.save(
+            db=db,
+            obj=user,
+    
         )
 
     def delete_user(

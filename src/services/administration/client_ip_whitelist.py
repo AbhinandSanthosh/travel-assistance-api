@@ -42,7 +42,8 @@ class ClientIPWhitelistService:
 
         return self.base_crud.create(
             db=db,
-            obj_in=whitelist_data,
+            model=ClientIPWhitelist,
+            data=whitelist_data,
         )
 
     def get_client_ip_whitelist(
@@ -114,8 +115,8 @@ class ClientIPWhitelistService:
 
         return self.base_crud.update(
             db=db,
-            db_obj=whitelist,
-            obj_in=whitelist_data,
+            obj=whitelist,
+            data=whitelist_data,
         )
 
     def delete_client_ip_whitelist(
@@ -132,5 +133,5 @@ class ClientIPWhitelistService:
 
         self.base_crud.delete(
             db=db,
-            obj_id=whitelist.id,
+            obj=whitelist,
         )

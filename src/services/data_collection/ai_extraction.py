@@ -1,3 +1,5 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.data_collection.ai_extraction import (
     AIExtractionNotFoundError,
 )
@@ -22,60 +24,80 @@ class AIExtractionService:
         repository: AIExtractionRepository,
     ) -> None:
         self.repository = repository
-        self.base_crud = BaseCrudService(
-            repository,
-        )
+        self.base_crud = BaseCrudService(repository)
 
-    async def create_ai_extraction(
+    def create_ai_extraction(
         self,
+        db: Session,
         data: AIExtractionCreate,
     ) -> AIExtraction:
-        return await self.base_crud.create(data)
+        """Create AI extraction."""
 
-    async def get_ai_extraction(
+        return self.base_crud.create(
+            db=db,
+            model=AIExtraction,
+            data=data,
+        )
+
+    def get_ai_extraction(
         self,
+        db: Session,
         extraction_id: int,
     ) -> AIExtraction:
-        extraction = await self.base_crud.get_by_id(
-            extraction_id,
+        """Get AI extraction by ID."""
+
+        extraction = self.base_crud.get_by_id(
+            db=db,
+            obj_id=extraction_id,
         )
 
         if extraction is None:
-            raise AIExtractionNotFoundError()
+            raise AIExtractionNotFoundError(
+                extraction_id,
+            )
 
         return extraction
 
-    async def get_ai_extractions(
+    def get_ai_extractions(
         self,
+        db: Session,
     ) -> list[AIExtraction]:
-        return await self.base_crud.get_all()
+        """Get all AI extractions."""
 
-    async def update_ai_extraction(
+        return self.base_crud.get_all(db)
+
+    def update_ai_extraction(
         self,
+        db: Session,
         extraction_id: int,
         data: AIExtractionUpdate,
     ) -> AIExtraction:
-        extraction = await self.base_crud.get_by_id(
-            extraction_id,
+        """Update AI extraction."""
+
+        extraction = self.get_ai_extraction(
+            db=db,
+            extraction_id=extraction_id,
         )
 
-        if extraction is None:
-            raise AIExtractionNotFoundError()
-
-        return await self.base_crud.update(
-            extraction,
-            data,
+        return self.base_crud.update(
+            db=db,
+            obj=extraction,
+            data=data,
         )
 
-    async def delete_ai_extraction(
+    def delete_ai_extraction(
         self,
+        db: Session,
         extraction_id: int,
     ) -> None:
-        extraction = await self.base_crud.get_by_id(
-            extraction_id,
+        """Delete AI extraction."""
+
+        extraction = self.get_ai_extraction(
+            db=db,
+            extraction_id=extraction_id,
         )
 
-        if extraction is None:
-            raise AIExtractionNotFoundError()
-
-        await self.base_crud.delete(extraction)
+        self.base_crud.delete(
+            db=db,
+            obj=extraction,
+        )

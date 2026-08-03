@@ -1,3 +1,6 @@
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from src.models.data_collection.source_registry import SourceRegistry
 from src.repositories.base_repository import BaseRepository
 
@@ -8,20 +11,24 @@ class SourceRegistryRepository(BaseRepository[SourceRegistry]):
     def __init__(self) -> None:
         super().__init__(SourceRegistry)
 
-    async def get_by_authority_name(
+    def get_by_authority_name(
         self,
+        db: Session,
         authority_name: str,
     ) -> SourceRegistry | None:
-        """Get a source registry by authority name."""
-        return await self.find_one_by(
-            authority_name=authority_name,
+        return db.scalar(
+            select(SourceRegistry).where(
+                SourceRegistry.authority_name == authority_name
+            )
         )
 
-    async def get_by_website(
+    def get_by_website(
         self,
+        db: Session,
         website: str,
     ) -> SourceRegistry | None:
-        """Get a source registry by website."""
-        return await self.find_one_by(
-            website=website,
+        return db.scalar(
+            select(SourceRegistry).where(
+                SourceRegistry.website == website
+            )
         )

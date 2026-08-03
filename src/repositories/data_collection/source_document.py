@@ -1,3 +1,6 @@
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from src.models.data_collection.source_document import (
     SourceDocument,
 )
@@ -9,23 +12,27 @@ class SourceDocumentRepository(
 ):
     """Repository for Source Document."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(SourceDocument)
 
-    async def get_by_document_url(
+    def get_by_document_url(
         self,
+        db: Session,
         document_url: str,
     ) -> SourceDocument | None:
-        return await self.get_by_field(
-            "document_url",
-            document_url,
+        return db.scalar(
+            select(SourceDocument).where(
+                SourceDocument.document_url == document_url
+            )
         )
 
-    async def get_by_file_hash(
+    def get_by_file_hash(
         self,
+        db: Session,
         file_hash: str,
     ) -> SourceDocument | None:
-        return await self.get_by_field(
-            "file_hash",
-            file_hash,
+        return db.scalar(
+            select(SourceDocument).where(
+                SourceDocument.file_hash == file_hash
+            )
         )

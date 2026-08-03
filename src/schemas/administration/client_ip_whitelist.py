@@ -1,9 +1,9 @@
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 from src.schemas.common import BaseResponseSchema
 
 
-class ClientIPWhitelistBase(BaseResponseSchema):
+class ClientIPWhitelistBase(BaseModel):
     """Base schema for Client IP Whitelist."""
 
     client_id: int
@@ -16,11 +16,10 @@ class ClientIPWhitelistBase(BaseResponseSchema):
 
 class ClientIPWhitelistCreate(ClientIPWhitelistBase):
     """Schema for creating a Client IP Whitelist."""
-
     pass
 
 
-class ClientIPWhitelistUpdate(BaseResponseSchema):
+class ClientIPWhitelistUpdate(BaseModel):
     """Schema for updating a Client IP Whitelist."""
 
     client_id: int | None = None

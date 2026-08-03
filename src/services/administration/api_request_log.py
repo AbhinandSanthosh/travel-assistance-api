@@ -34,7 +34,8 @@ class APIRequestLogService:
 
         return self.base_crud.create(
             db=db,
-            obj_in=request_log_data,
+            model=APIRequestLog,
+            data=request_log_data,
         )
 
     def get_api_request_log(

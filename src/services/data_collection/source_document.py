@@ -1,8 +1,13 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.data_collection.source_document import (
     SourceDocumentDocumentURLAlreadyExistsError,
     SourceDocumentFileHashAlreadyExistsError,
+    SourceDocumentNotFoundError,
 )
-from src.models.data_collection.source_document import SourceDocument
+from src.models.data_collection.source_document import (
+    SourceDocument,
+)
 from src.repositories.data_collection.source_document import (
     SourceDocumentRepository,
 )
@@ -19,79 +24,129 @@ class SourceDocumentService:
     def __init__(
         self,
         repository: SourceDocumentRepository,
-    ):
+    ) -> None:
         self.repository = repository
         self.base_crud = BaseCrudService(repository)
 
-    async def create_source_document(
+    def create_source_document(
         self,
+        db: Session,
         data: SourceDocumentCreate,
     ) -> SourceDocument:
-        document = await self.repository.get_by_document_url(
+
+        document = self.repository.get_by_document_url(
+            db,
             data.document_url,
         )
+
         if document:
             raise SourceDocumentDocumentURLAlreadyExistsError(
                 data.document_url,
             )
 
-        file_hash = await self.repository.get_by_file_hash(
+        file_hash = self.repository.get_by_file_hash(
+            db,
             data.file_hash,
         )
+
         if file_hash:
             raise SourceDocumentFileHashAlreadyExistsError(
                 data.file_hash,
             )
 
-        return await self.base_crud.create(data)
+        return self.base_crud.create(
+            db=db,
+            model=SourceDocument,
+            data=data,
+        )
 
-    async def get_source_document(
+    def get_source_document(
         self,
+        db: Session,
         source_document_id: int,
     ) -> SourceDocument:
-        return await self.base_crud.get_by_id(source_document_id)
 
-    async def get_source_documents(
+        document = self.base_crud.get_by_id(
+            db=db,
+            obj_id=source_document_id,
+        )
+
+        if document is None:
+            raise SourceDocumentNotFoundError(
+                source_document_id,
+            )
+
+        return document
+
+    def get_source_documents(
         self,
+        db: Session,
     ) -> list[SourceDocument]:
-        return await self.base_crud.get_all()
 
-    async def update_source_document(
+        return self.base_crud.get_all(db)
+
+    def update_source_document(
         self,
+        db: Session,
         source_document_id: int,
         data: SourceDocumentUpdate,
     ) -> SourceDocument:
-        if data.document_url:
-            document = await self.repository.get_by_document_url(
-                data.document_url,
-            )
-            if (
-                document
-                and document.id != source_document_id
-            ):
-                raise SourceDocumentDocumentURLAlreadyExistsError(
-                    data.document_url,
-                )
 
-        if data.file_hash:
-            file_hash = await self.repository.get_by_file_hash(
-                data.file_hash,
-            )
-            if (
-                file_hash
-                and file_hash.id != source_document_id
-            ):
-                raise SourceDocumentFileHashAlreadyExistsError(
-                    data.file_hash,
-                )
-
-        return await self.base_crud.update(
-            source_document_id,
-            data,
+        document = self.get_source_document(
+            db=db,
+            source_document_id=source_document_id,
         )
 
-    async def delete_source_document(
+        update_data = data.model_dump(
+            exclude_unset=True,
+        )
+
+        if (
+            "document_url" in update_data
+            and update_data["document_url"] != document.document_url
+        ):
+            existing = self.repository.get_by_document_url(
+                db,
+                update_data["document_url"],
+            )
+
+            if existing:
+                raise SourceDocumentDocumentURLAlreadyExistsError(
+                    update_data["document_url"],
+                )
+
+        if (
+            "file_hash" in update_data
+            and update_data["file_hash"] != document.file_hash
+        ):
+            existing = self.repository.get_by_file_hash(
+                db,
+                update_data["file_hash"],
+            )
+
+            if existing:
+                raise SourceDocumentFileHashAlreadyExistsError(
+                    update_data["file_hash"],
+                )
+
+        return self.base_crud.update(
+            db=db,
+            obj=document,
+            data=data,
+        )
+
+    def delete_source_document(
         self,
+        db: Session,
         source_document_id: int,
     ) -> None:
-        await self.base_crud.delete(source_document_id)
+
+        document = self.get_source_document(
+            db=db,
+            source_document_id=source_document_id,
+        )
+
+        self.base_crud.delete(
+            db=db,
+            obj=document,
+        )

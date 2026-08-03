@@ -6,7 +6,7 @@ from sqlalchemy import Boolean, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.db.base_model import BaseModel
 
 if TYPE_CHECKING:
     from src.models.compliance.rule import Rule
@@ -15,15 +15,11 @@ if TYPE_CHECKING:
 
 
 class ImmigrationRule(
-    Base,
+    BaseModel
 ):
     """Immigration requirements for entry into a destination country."""
 
     __tablename__ = "immigration_rules"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-    )
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),

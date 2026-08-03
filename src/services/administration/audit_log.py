@@ -32,7 +32,8 @@ class AuditLogService:
 
         return self.base_crud.create(
             db=db,
-            obj_in=audit_log_data,
+            model=AuditLog,
+            data=audit_log_data,
         )
 
     def get_audit_log(

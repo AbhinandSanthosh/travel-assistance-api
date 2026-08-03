@@ -1,11 +1,11 @@
 from datetime import date
 
-from pydantic import ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 from src.schemas.common import BaseResponseSchema
 
 
-class ClientUsageStatisticsBase(BaseResponseSchema):
+class ClientUsageStatisticsBase(BaseModel):
     """Base schema for Client Usage Statistics."""
 
     client_id: int
@@ -22,7 +22,7 @@ class ClientUsageStatisticsCreate(ClientUsageStatisticsBase):
     pass
 
 
-class ClientUsageStatisticsUpdate(BaseResponseSchema):
+class ClientUsageStatisticsUpdate(BaseModel):
     """Schema for updating client usage statistics."""
 
     total_requests: int | None = None

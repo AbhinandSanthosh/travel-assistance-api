@@ -7,7 +7,7 @@ from sqlalchemy import Date, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.db.base import Base
+from src.db.base_model import BaseModel
 
 if TYPE_CHECKING:
     from src.models.compliance.rule import Rule
@@ -15,17 +15,10 @@ if TYPE_CHECKING:
     from src.models.data_collection.source_registry import SourceRegistry
 
 
-
-class EntryRestriction(
-    Base,
-):
+class EntryRestriction(BaseModel):
     """Entry restrictions applicable to travellers."""
 
     __tablename__ = "entry_restrictions"
-
-    id: Mapped[int] = mapped_column(
-        primary_key=True,
-    )
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
@@ -98,4 +91,3 @@ class EntryRestriction(
         "SourceRegistry",
         back_populates="entry_restrictions",
     )
-
