@@ -1,0 +1,6 @@
+ADT,Adult,"Passenger aged 12 years or older"
+CHD,Child,"Passenger aged 2 to 11 years"
+INF,Infant,"Passenger below 2 years travelling with an adult"
+CREW,Crew,"Airline operating crew members"
+DIP,Diplomat,"Diplomatic passport holder travelling on official assignment"
+MIL,Military,"Military personnel travelling on official duty"

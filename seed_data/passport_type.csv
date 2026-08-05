@@ -1,0 +1,5 @@
+PP,Ordinary Passport,"Standard passport issued to citizens for personal travel"
+DP,Diplomatic Passport,"Issued to diplomats and senior government officials"
+SP,Service Passport,"Issued to government employees traveling on official duty"
+OP,Official Passport,"Official passport issued for government assignments"
+EP,Emergency Passport,"Temporary passport issued for emergency travel"

@@ -22,7 +22,6 @@ class EntryRestriction(BaseModel):
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
-        unique=True,
         nullable=False,
     )
 
@@ -74,7 +73,7 @@ class EntryRestriction(BaseModel):
     )
 
     rule: Mapped["Rule"] = relationship(
-        back_populates="entry_restriction",
+        back_populates="entry_restrictions",
     )
 
     destination_country: Mapped["Country"] = relationship(

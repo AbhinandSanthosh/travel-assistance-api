@@ -1,3 +1,5 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.compliance.rule_execution_log import (
     RuleExecutionLogNotFoundError,
 )
@@ -11,35 +13,46 @@ from src.schemas.compliance.rule_execution_log import (
     RuleExecutionLogCreate,
     RuleExecutionLogUpdate,
 )
-from src.services.base_crud_service import BaseCrudService
+from src.services.base_crud_service import (
+    BaseCrudService,
+)
 
 
 class RuleExecutionLogService:
-    """Service for Rule Execution Log."""
+    """Service layer for RuleExecutionLog."""
 
     def __init__(
         self,
         repository: RuleExecutionLogRepository,
     ) -> None:
         self.repository = repository
-        self.base_crud = BaseCrudService(
+        self.crud = BaseCrudService(
             repository,
         )
 
-    async def create_rule_execution_log(
+    def create_rule_execution_log(
         self,
-        data: RuleExecutionLogCreate,
+        db: Session,
+        rule_execution_log_data: RuleExecutionLogCreate,
     ) -> RuleExecutionLog:
-        return await self.base_crud.create(data)
+        """Create a rule execution log."""
 
-    async def get_rule_execution_log(
+        return self.crud.create(
+            db=db,
+            model=RuleExecutionLog,
+            data=rule_execution_log_data,
+        )
+
+    def get_rule_execution_log(
         self,
+        db: Session,
         rule_execution_log_id: int,
     ) -> RuleExecutionLog:
-        rule_execution_log = (
-            await self.base_crud.get_by_id(
-                rule_execution_log_id,
-            )
+        """Get a rule execution log by ID."""
+
+        rule_execution_log = self.crud.get_by_id(
+            db=db,
+            obj_id=rule_execution_log_id,
         )
 
         if rule_execution_log is None:
@@ -47,43 +60,46 @@ class RuleExecutionLogService:
 
         return rule_execution_log
 
-    async def get_rule_execution_logs(
+    def get_rule_execution_logs(
         self,
+        db: Session,
     ) -> list[RuleExecutionLog]:
-        return await self.base_crud.get_all()
+        """Get all rule execution logs."""
 
-    async def update_rule_execution_log(
+        return self.crud.get_all(db)
+
+    def update_rule_execution_log(
         self,
+        db: Session,
         rule_execution_log_id: int,
-        data: RuleExecutionLogUpdate,
+        rule_execution_log_data: RuleExecutionLogUpdate,
     ) -> RuleExecutionLog:
-        rule_execution_log = (
-            await self.base_crud.get_by_id(
-                rule_execution_log_id,
-            )
+        """Update a rule execution log."""
+
+        rule_execution_log = self.get_rule_execution_log(
+            db=db,
+            rule_execution_log_id=rule_execution_log_id,
         )
 
-        if rule_execution_log is None:
-            raise RuleExecutionLogNotFoundError()
-
-        return await self.base_crud.update(
-            rule_execution_log,
-            data,
+        return self.crud.update(
+            db=db,
+            obj=rule_execution_log,
+            data=rule_execution_log_data,
         )
 
-    async def delete_rule_execution_log(
+    def delete_rule_execution_log(
         self,
+        db: Session,
         rule_execution_log_id: int,
     ) -> None:
-        rule_execution_log = (
-            await self.base_crud.get_by_id(
-                rule_execution_log_id,
-            )
+        """Delete a rule execution log."""
+
+        rule_execution_log = self.get_rule_execution_log(
+            db=db,
+            rule_execution_log_id=rule_execution_log_id,
         )
 
-        if rule_execution_log is None:
-            raise RuleExecutionLogNotFoundError()
-
-        await self.base_crud.delete(
-            rule_execution_log,
+        self.crud.delete(
+            db=db,
+            obj=rule_execution_log,
         )

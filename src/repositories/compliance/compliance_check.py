@@ -1,21 +1,29 @@
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from src.models.compliance.compliance_check import (
     ComplianceCheck,
 )
-from src.repositories.base_repository import BaseRepository
+from src.repositories.base_repository import (
+    BaseRepository,
+)
 
 
 class ComplianceCheckRepository(
-    BaseRepository[ComplianceCheck]
+    BaseRepository[ComplianceCheck],
 ):
-    """Repository for Compliance Check."""
+    """Repository for ComplianceCheck."""
 
     def __init__(self) -> None:
         super().__init__(ComplianceCheck)
 
-    async def get_by_request_id(
+    def get_by_request_id(
         self,
+        db: Session,
         request_id: str,
     ) -> ComplianceCheck | None:
-        return await self.get_by_fields(
-            request_id=request_id,
+        return db.scalar(
+            select(ComplianceCheck).where(
+                ComplianceCheck.request_id == request_id,
+            )
         )

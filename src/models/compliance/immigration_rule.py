@@ -23,7 +23,6 @@ class ImmigrationRule(
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
-        unique=True,
         nullable=False,
     )
 
@@ -100,7 +99,7 @@ class ImmigrationRule(
     )
 
     rule: Mapped["Rule"] = relationship(
-        back_populates="immigration_rule",
+        back_populates="immigration_rules",
     )
 
     destination_country: Mapped["Country"] = relationship(

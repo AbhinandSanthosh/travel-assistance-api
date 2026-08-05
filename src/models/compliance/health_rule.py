@@ -23,7 +23,6 @@ class HealthRule(BaseModel):
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
-        unique=True,
         nullable=False,
     )
 
@@ -80,7 +79,7 @@ class HealthRule(BaseModel):
     )
 
     rule: Mapped["Rule"] = relationship(
-        back_populates="health_rule",
+        back_populates="health_rules",
     )
 
     destination_country: Mapped["Country"] = relationship(

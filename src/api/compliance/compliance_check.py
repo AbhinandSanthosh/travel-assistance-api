@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
+from sqlalchemy.orm import Session
 
 from src.api.dependencies.compliance import (
     get_compliance_check_service,
 )
-from src.models.compliance.compliance_check import (
-    ComplianceCheck,
-)
+from src.db.session import get_db
 from src.schemas.compliance.compliance_check import (
     ComplianceCheckCreate,
     ComplianceCheckResponse,
@@ -22,42 +21,49 @@ router = APIRouter(
 
 
 @router.post(
-    "/",
+    "",
     response_model=ComplianceCheckResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_compliance_check(
+def create_compliance_check(
     data: ComplianceCheckCreate,
+    db: Session = Depends(get_db),
     service: ComplianceCheckService = Depends(
         get_compliance_check_service,
     ),
-) -> ComplianceCheck:
-    return await service.create_compliance_check(data)
+):
+    return service.create_compliance_check(
+        db,
+        data,
+    )
 
 
 @router.get(
-    "/",
+    "",
     response_model=list[ComplianceCheckResponse],
 )
-async def get_compliance_checks(
+def get_compliance_checks(
+    db: Session = Depends(get_db),
     service: ComplianceCheckService = Depends(
         get_compliance_check_service,
     ),
-) -> list[ComplianceCheck]:
-    return await service.get_compliance_checks()
+):
+    return service.get_compliance_checks(db)
 
 
 @router.get(
     "/{compliance_check_id}",
     response_model=ComplianceCheckResponse,
 )
-async def get_compliance_check(
+def get_compliance_check(
     compliance_check_id: int,
+    db: Session = Depends(get_db),
     service: ComplianceCheckService = Depends(
         get_compliance_check_service,
     ),
-) -> ComplianceCheck:
-    return await service.get_compliance_check(
+):
+    return service.get_compliance_check(
+        db,
         compliance_check_id,
     )
 
@@ -66,14 +72,16 @@ async def get_compliance_check(
     "/{compliance_check_id}",
     response_model=ComplianceCheckResponse,
 )
-async def update_compliance_check(
+def update_compliance_check(
     compliance_check_id: int,
     data: ComplianceCheckUpdate,
+    db: Session = Depends(get_db),
     service: ComplianceCheckService = Depends(
         get_compliance_check_service,
     ),
-) -> ComplianceCheck:
-    return await service.update_compliance_check(
+):
+    return service.update_compliance_check(
+        db,
         compliance_check_id,
         data,
     )
@@ -83,12 +91,18 @@ async def update_compliance_check(
     "/{compliance_check_id}",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_compliance_check(
+def delete_compliance_check(
     compliance_check_id: int,
+    db: Session = Depends(get_db),
     service: ComplianceCheckService = Depends(
         get_compliance_check_service,
     ),
-) -> None:
-    await service.delete_compliance_check(
+):
+    service.delete_compliance_check(
+        db,
         compliance_check_id,
+    )
+
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT,
     )

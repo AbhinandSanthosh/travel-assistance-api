@@ -1,0 +1,6 @@
+8,1,2,1,1,1,true,false,false,90,false,,,Indian ordinary passport holders require a Schengen tourist visa before travelling to Poland.
+8,1,2,1,2,2,true,false,false,90,true,,,Indian ordinary passport holders require a Schengen business visa before travelling to Poland.
+8,3,2,1,1,1,true,false,false,90,false,,,Saudi Arabian ordinary passport holders require a Schengen tourist visa before travelling to Poland.
+8,3,2,1,2,2,true,false,false,90,true,,,Saudi Arabian ordinary passport holders require a Schengen business visa before travelling to Poland.
+8,2,2,1,10,1,false,false,false,,true,,,Polish citizens do not require a visa to enter Poland.
+8,2,2,1,10,2,false,false,false,,true,,,Polish citizens do not require a visa to enter Poland for business travel.

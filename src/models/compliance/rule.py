@@ -69,45 +69,44 @@ class Rule(BaseModel):
         nullable=True,
     )
 
-    visa_rule: Mapped["VisaRule"] = relationship(
+    visa_rules: Mapped["VisaRule"] = relationship(
         "VisaRule",
         back_populates="rule",
-        uselist=False,
     )
 
-    passport_rule: Mapped["PassportRule"] = relationship(
+    passport_rules: Mapped[list["PassportRule"]] = relationship(
         "PassportRule",
         back_populates="rule",
-        uselist=False,
     )
 
-    transit_rule: Mapped["TransitRule"] = relationship(
+    transit_rules: Mapped[list["TransitRule"]] = relationship(
         "TransitRule",
         back_populates="rule",
-        uselist=False,
     )
 
-    health_rule: Mapped["HealthRule"] = relationship(
-        back_populates="rule",
-        uselist=False,
-    )
-
-    immigration_rule: Mapped["ImmigrationRule"] = relationship(
+    health_rules: Mapped[list["HealthRule"]] = relationship(
+        "HealthRule",
         back_populates="rule",
     )
 
-    customs_rule: Mapped["CustomsRule"] = relationship(
+    immigration_rules: Mapped[list["ImmigrationRule"]] = relationship(
+        "ImmigrationRule",
         back_populates="rule",
     )
 
-    entry_restriction: Mapped["EntryRestriction"] = relationship(
+    customs_rules: Mapped[list["CustomsRule"]] = relationship(
+        "CustomsRule",
         back_populates="rule",
     )
 
-    travel_authorization_rule: Mapped["TravelAuthorizationRule"] = relationship(
+    entry_restrictions: Mapped[list["EntryRestriction"]] = relationship(
+        "EntryRestriction",
+        back_populates="rule",
+    )
+
+    travel_authorization_rules: Mapped[list["TravelAuthorizationRule"]] = relationship(
         "TravelAuthorizationRule",
         back_populates="rule",
-        uselist=False,
     )
 
     status: Mapped["RuleStatus"] = relationship(

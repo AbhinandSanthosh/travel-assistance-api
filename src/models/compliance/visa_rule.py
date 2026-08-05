@@ -35,7 +35,6 @@ class VisaRule(BaseModel):
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
-        unique=True,
         nullable=False,
     )
 
@@ -114,7 +113,7 @@ class VisaRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="visa_rule",
+        back_populates="visa_rules",
     )
 
     nationality_country: Mapped["Country"] = relationship(

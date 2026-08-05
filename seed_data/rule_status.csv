@@ -1,0 +1,6 @@
+DRAFT,Draft,"Rule is being created and edited"
+PENDING_REVIEW,Pending Review,"Rule is waiting for reviewer assignment"
+UNDER_REVIEW,Under Review,"Rule is currently under review"
+APPROVED,Approved,"Rule has been approved and is ready for publication"
+PUBLISHED,Published,"Rule is active and available for compliance checks"
+ARCHIVED,Archived,"Rule is retired and no longer active"

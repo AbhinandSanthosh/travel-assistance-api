@@ -1,0 +1,6 @@
+Super Administrator,"Full system access with unrestricted administrative privileges"
+Administrator,"Manages users, reference data and compliance rules"
+Compliance Manager,"Creates, reviews and publishes travel compliance rules"
+Data Collection Officer,"Collects and maintains official travel information from government sources"
+Rule Reviewer,"Reviews and approves compliance rules before publication"
+API Client,"Represents external systems consuming the Travel Assistance API"

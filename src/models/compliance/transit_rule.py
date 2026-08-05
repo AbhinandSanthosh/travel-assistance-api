@@ -20,7 +20,6 @@ class TransitRule(BaseModel):
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
         nullable=False,
-        unique=True,
     )
 
     nationality_country_id: Mapped[int] = mapped_column(
@@ -84,7 +83,7 @@ class TransitRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="transit_rule",
+        back_populates="transit_rules",
     )
 
     nationality_country: Mapped["Country"] = relationship(

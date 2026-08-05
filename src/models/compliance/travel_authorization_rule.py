@@ -25,7 +25,6 @@ class TravelAuthorizationRule(BaseModel):
             "rules.id",
             name="fk_travel_authorization_rules_rule_id",
         ),
-        unique=True,
         nullable=False,
     )
 
@@ -97,7 +96,7 @@ class TravelAuthorizationRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="travel_authorization_rule",
+        back_populates="travel_authorization_rules",
     )
 
     travel_authorization: Mapped["TravelAuthorization"] = relationship(

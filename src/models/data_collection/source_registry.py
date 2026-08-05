@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING
 
+from sqlalchemy import text
+
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -57,8 +59,8 @@ class SourceRegistry(BaseModel):
     )
 
     active: Mapped[bool] = mapped_column(
-        default=True,
         nullable=False,
+        server_default=text("true")
     )
 
     country: Mapped["Country"] = relationship(

@@ -20,7 +20,6 @@ class PassportRule(BaseModel):
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
         nullable=False,
-        unique=True,
     )
 
     destination_country_id: Mapped[int] = mapped_column(
@@ -80,7 +79,7 @@ class PassportRule(BaseModel):
 
     rule: Mapped["Rule"] = relationship(
         "Rule",
-        back_populates="passport_rule",
+        back_populates="passport_rules",
     )
 
     destination_country: Mapped["Country"] = relationship(

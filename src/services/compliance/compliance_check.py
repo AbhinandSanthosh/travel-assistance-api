@@ -1,3 +1,5 @@
+from sqlalchemy.orm import Session
+
 from src.exceptions.compliance.compliance_check import (
     ComplianceCheckNotFoundError,
     ComplianceCheckRequestIdAlreadyExistsError,
@@ -12,88 +14,111 @@ from src.schemas.compliance.compliance_check import (
     ComplianceCheckCreate,
     ComplianceCheckUpdate,
 )
-from src.services.base_crud_service import BaseCrudService
+from src.services.base_crud_service import (
+    BaseCrudService,
+)
 
 
 class ComplianceCheckService:
-    """Service for Compliance Check."""
+    """Service layer for ComplianceCheck."""
 
     def __init__(
         self,
         repository: ComplianceCheckRepository,
     ) -> None:
         self.repository = repository
-        self.base_crud = BaseCrudService(
-            repository,
-        )
+        self.crud = BaseCrudService(repository)
 
-    async def create_compliance_check(
+    def create_compliance_check(
         self,
+        db: Session,
         data: ComplianceCheckCreate,
     ) -> ComplianceCheck:
-        existing = await self.repository.get_by_request_id(
-            data.request_id,
+
+        if (
+            self.repository.get_by_request_id(
+                db,
+                data.request_id,
+            )
+            is not None
+        ):
+            raise ComplianceCheckRequestIdAlreadyExistsError()
+
+        return self.crud.create(
+            db=db,
+            model=ComplianceCheck,
+            data=data,
         )
 
-        if existing is not None:
-            raise (
-                ComplianceCheckRequestIdAlreadyExistsError()
-            )
-
-        return await self.base_crud.create(data)
-
-    async def get_compliance_check(
+    def get_compliance_check(
         self,
+        db: Session,
         compliance_check_id: int,
     ) -> ComplianceCheck:
-        compliance_check = (
-            await self.base_crud.get_by_id(
-                compliance_check_id,
-            )
+
+        obj = self.crud.get_by_id(
+            db=db,
+            obj_id=compliance_check_id,
         )
 
-        if compliance_check is None:
+        if obj is None:
             raise ComplianceCheckNotFoundError()
 
-        return compliance_check
+        return obj
 
-    async def get_compliance_checks(
+    def get_compliance_checks(
         self,
+        db: Session,
     ) -> list[ComplianceCheck]:
-        return await self.base_crud.get_all()
+        return self.crud.get_all(db)
 
-    async def update_compliance_check(
+    def update_compliance_check(
         self,
+        db: Session,
         compliance_check_id: int,
         data: ComplianceCheckUpdate,
     ) -> ComplianceCheck:
-        compliance_check = (
-            await self.base_crud.get_by_id(
-                compliance_check_id,
+
+        obj = self.get_compliance_check(
+            db,
+            compliance_check_id,
+        )
+
+        update_data = data.model_dump(
+            exclude_unset=True,
+        )
+
+        if (
+            "request_id" in update_data
+            and update_data["request_id"]
+            != obj.request_id
+        ):
+            existing = self.repository.get_by_request_id(
+                db,
+                update_data["request_id"],
             )
+
+            if existing is not None:
+                raise ComplianceCheckRequestIdAlreadyExistsError()
+
+        return self.crud.update(
+            db=db,
+            obj=obj,
+            data=data,
         )
 
-        if compliance_check is None:
-            raise ComplianceCheckNotFoundError()
-
-        return await self.base_crud.update(
-            compliance_check,
-            data,
-        )
-
-    async def delete_compliance_check(
+    def delete_compliance_check(
         self,
+        db: Session,
         compliance_check_id: int,
     ) -> None:
-        compliance_check = (
-            await self.base_crud.get_by_id(
-                compliance_check_id,
-            )
+
+        obj = self.get_compliance_check(
+            db,
+            compliance_check_id,
         )
 
-        if compliance_check is None:
-            raise ComplianceCheckNotFoundError()
-
-        await self.base_crud.delete(
-            compliance_check,
+        self.crud.delete(
+            db=db,
+            obj=obj,
         )

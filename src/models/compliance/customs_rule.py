@@ -22,7 +22,6 @@ class CustomsRule(BaseModel):
 
     rule_id: Mapped[int] = mapped_column(
         ForeignKey("rules.id"),
-        unique=True,
         nullable=False,
     )
 
@@ -102,7 +101,7 @@ class CustomsRule(BaseModel):
     )
 
     rule: Mapped["Rule"] = relationship(
-        back_populates="customs_rule",
+        back_populates="customs_rules",
     )
 
     destination_country: Mapped["Country"] = relationship(
