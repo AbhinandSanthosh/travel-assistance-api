@@ -1,7 +1,9 @@
 from src.db.session import SessionLocal
 from src.rule_engine.engine import RuleEngine
 from src.rule_engine.models import JourneyRequest
-
+from src.rule_engine.decision_generator import (
+    DecisionGenerator,
+)
 
 def main() -> None:
     """
@@ -21,6 +23,11 @@ def main() -> None:
         engine = RuleEngine(db)
 
         result = engine.execute(request)
+        decision_generator = DecisionGenerator()
+
+        decision = decision_generator.generate(
+            result,
+        )
 
         print("\n========== RULE ENGINE RESULT ==========\n")
 
@@ -51,6 +58,10 @@ def main() -> None:
         print("\nEntry Restriction Evaluation")
         print("----------------------------")
         print(result.entry_restriction)
+
+        print("\nCompliance Decision")
+        print("-------------------")
+        print(decision)
 
         print("\n========================================")
 

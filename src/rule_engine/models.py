@@ -226,4 +226,18 @@ class RuleEngineResult:
 
     entry_restriction: EntryRestrictionEvaluationResult | None = None
 
+@dataclass
+class ComplianceDecision:
+    """
+    Final compliance decision returned by the Rule Engine.
+    """
 
+    status: str
+
+    summary: str
+
+    requirements: list[str]
+
+    warnings: list[str]
+
+    blockers: list[str]
