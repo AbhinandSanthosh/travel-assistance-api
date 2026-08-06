@@ -9,6 +9,10 @@ from src.services.rule_engine.rule_query_service import (
 )
 from src.models.compliance.passport_rule import PassportRule
 from src.models.compliance.transit_rule import TransitRule
+from src.models.compliance.health_rule import HealthRule
+from src.models.compliance.immigration_rule import (
+    ImmigrationRule,
+)
 class RuleLoader:
     """
     Loads all applicable compliance rules for a traveller.
@@ -39,8 +43,8 @@ class RuleLoader:
             visa_rule=visa_rule,
             passport_rule=self._load_passport_rule(context),
             transit_rule=self._load_transit_rule(context),
-            health_rule=None,
-            immigration_rule=None,
+            health_rule=self._load_health_rule(context),
+            immigration_rule=self._load_immigration_rule(context),
             customs_rule=None,
             entry_restriction=None,
         )
@@ -71,4 +75,26 @@ class RuleLoader:
             nationality_country_id=context.nationality_country_id,
             transit_country_id=context.destination_country_id,
             transit_airport_id=4,
+        )
+
+    def _load_health_rule(
+        self,
+        context: ComplianceContext,
+    ) -> HealthRule | None:
+
+        return self.rule_query_service.get_health_rule(
+            nationality_country_id=context.nationality_country_id,
+            destination_country_id=context.destination_country_id,
+        )
+
+    def _load_immigration_rule(
+        self,
+        context: ComplianceContext,
+    ) -> ImmigrationRule | None:
+        """
+        Load the applicable immigration rule.
+        """
+
+        return self.rule_query_service.get_immigration_rule(
+            destination_country_id=context.destination_country_id,
         )

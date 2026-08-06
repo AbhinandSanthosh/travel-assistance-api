@@ -111,6 +111,57 @@ class TransitEvaluationResult:
     max_transit_hours: int | None
 
     remarks: str | None
+@dataclass
+class VaccineRequirement:
+    """
+    Vaccine requirement associated with a health rule.
+    """
+
+    vaccine_name: str
+
+    certificate_required: bool
+
+
+@dataclass
+class HealthEvaluationResult:
+    """
+    Result produced by the Health Evaluator.
+    """
+
+    health_form_required: bool
+
+    quarantine_required: bool
+
+    quarantine_days: int | None
+
+    medical_certificate_required: bool
+
+    vaccines: list[VaccineRequirement]
+
+    remarks: str | None
+@dataclass
+class ImmigrationEvaluationResult:
+    """
+    Result produced by the Immigration Evaluator.
+    """
+
+    onward_ticket_required: bool
+
+    accommodation_proof_required: bool
+
+    proof_of_funds_required: bool
+
+    biometric_required: bool
+
+    interview_required: bool
+
+    arrival_card_required: bool
+
+    digital_arrival_card: bool
+
+    arrival_registration_required: bool
+
+    remarks: str | None
 
 @dataclass
 class RuleEngineResult:
@@ -124,9 +175,9 @@ class RuleEngineResult:
 
     transit: TransitEvaluationResult | None = None
 
-    health: object | None = None
+    health: HealthEvaluationResult | None = None
 
-    immigration: object | None = None
+    immigration: ImmigrationEvaluationResult | None = None
 
     customs: object | None = None
 

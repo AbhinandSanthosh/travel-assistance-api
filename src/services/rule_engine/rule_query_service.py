@@ -3,6 +3,14 @@ from sqlalchemy.orm import Session
 from src.models.compliance.visa_rule import VisaRule
 from src.models.compliance.passport_rule import PassportRule
 from src.models.compliance.transit_rule import TransitRule
+from sqlalchemy.orm import joinedload
+from src.models.compliance.health_rule import HealthRule
+from src.models.compliance.health_rule_vaccine import (
+    HealthRuleVaccine,
+)
+from src.models.compliance.immigration_rule import (
+    ImmigrationRule,
+)
 class RuleQueryService:
     """
     Read-only queries used by the Rule Engine.
@@ -79,6 +87,51 @@ class RuleQueryService:
                 == transit_country_id,
                 TransitRule.transit_airport_id
                 == transit_airport_id,
+            )
+            .first()
+        )
+
+    def get_health_rule(
+        self,
+        nationality_country_id: int,
+        destination_country_id: int,
+    ) -> HealthRule | None:
+        """
+        Retrieve the applicable health rule together with
+        its associated vaccines.
+        """
+
+        return (
+            self.db.query(HealthRule)
+            .options(
+                joinedload(
+                    HealthRule.health_rule_vaccines
+                ).joinedload(
+                    HealthRuleVaccine.vaccine
+                    )
+            )
+            .filter(
+                HealthRule.nationality_country_id
+                == nationality_country_id,
+                HealthRule.destination_country_id
+                == destination_country_id,
+            )
+            .first()
+        )
+
+    def get_immigration_rule(
+        self,
+        destination_country_id: int,
+    ) -> ImmigrationRule | None:
+        """
+        Retrieve the applicable immigration rule.
+        """
+
+        return (
+            self.db.query(ImmigrationRule)
+            .filter(
+                ImmigrationRule.destination_country_id
+                == destination_country_id,
             )
             .first()
         )

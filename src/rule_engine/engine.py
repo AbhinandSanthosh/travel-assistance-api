@@ -13,6 +13,10 @@ from src.rule_engine.models import (
 from src.rule_engine.evaluators.passport import PassportEvaluator
 from src.rule_engine.rule_loader import RuleLoader
 from src.rule_engine.evaluators.transit import TransitEvaluator
+from src.rule_engine.evaluators.health import HealthEvaluator
+from src.rule_engine.evaluators.immigration import (
+    ImmigrationEvaluator,
+)
 
 class RuleEngine:
     """
@@ -31,6 +35,8 @@ class RuleEngine:
         self.visa_evaluator = VisaEvaluator()
         self.passport_evaluator = PassportEvaluator()
         self.transit_evaluator = TransitEvaluator()
+        self.health_evaluator = HealthEvaluator()
+        self.immigration_evaluator = ImmigrationEvaluator()
 
     def execute(
         self,
@@ -59,9 +65,20 @@ class RuleEngine:
         transit_result = self.transit_evaluator.evaluate(
             loaded_rules,
         )
+        health_result = self.health_evaluator.evaluate(
+            loaded_rules,
+        )
+        immigration_result = (
+            self.immigration_evaluator.evaluate(
+                loaded_rules,
+            )
+        )
+
 
         return RuleEngineResult(
             visa=visa_result,
             passport=passport_result,
             transit=transit_result,
+            health=health_result,
+            immigration=immigration_result,
         )
