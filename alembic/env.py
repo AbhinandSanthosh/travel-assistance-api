@@ -1,3 +1,4 @@
+# ruff: noqa: F403
 from logging.config import fileConfig
 
 from src.config.settings import settings
