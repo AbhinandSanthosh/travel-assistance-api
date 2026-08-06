@@ -14,6 +14,9 @@ from src.models.compliance.immigration_rule import (
     ImmigrationRule,
 )
 from src.models.compliance.customs_rule import CustomsRule
+from src.models.compliance.entry_restriction import (
+    EntryRestriction,
+)
 class RuleLoader:
     """
     Loads all applicable compliance rules for a traveller.
@@ -47,7 +50,7 @@ class RuleLoader:
             health_rule=self._load_health_rule(context),
             immigration_rule=self._load_immigration_rule(context),
             customs_rule=self._load_customs_rule(context),
-            entry_restriction=None,
+            entry_restriction=self._load_entry_restriction(context),
         )
 
     def _load_passport_rule(
@@ -109,6 +112,19 @@ class RuleLoader:
         """
 
         return self.rule_query_service.get_customs_rule(
+            nationality_country_id=context.nationality_country_id,
+            destination_country_id=context.destination_country_id,
+        )
+
+    def _load_entry_restriction(
+        self,
+        context: ComplianceContext,
+    ) -> EntryRestriction | None:
+        """
+        Load the applicable entry restriction.
+        """
+
+        return self.rule_query_service.get_entry_restriction(
             nationality_country_id=context.nationality_country_id,
             destination_country_id=context.destination_country_id,
         )

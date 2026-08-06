@@ -12,6 +12,7 @@ from src.models.compliance.immigration_rule import (
     ImmigrationRule,
 )
 from src.models.compliance.customs_rule import CustomsRule
+from src.models.compliance.entry_restriction import EntryRestriction
 class RuleQueryService:
     """
     Read-only queries used by the Rule Engine.
@@ -155,6 +156,29 @@ class RuleQueryService:
                 CustomsRule.nationality_country_id
                 == nationality_country_id,
                 CustomsRule.destination_country_id
+                == destination_country_id,
+            )
+            .first()
+        )
+
+    def get_entry_restriction(
+        self,
+        nationality_country_id: int,
+        destination_country_id: int,
+    ) -> EntryRestriction | None:
+        """
+        Retrieve the applicable entry restriction.
+        """
+
+        return (
+            self.db.query(EntryRestriction)
+            .options(
+                joinedload(EntryRestriction.source)
+            )
+            .filter(
+                EntryRestriction.nationality_country_id
+                == nationality_country_id,
+                EntryRestriction.destination_country_id
                 == destination_country_id,
             )
             .first()

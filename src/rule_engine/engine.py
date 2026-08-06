@@ -18,7 +18,9 @@ from src.rule_engine.evaluators.immigration import (
     ImmigrationEvaluator,
 )
 from src.rule_engine.evaluators.customs import CustomsEvaluator
-
+from src.rule_engine.evaluators.entry_restriction import (
+    EntryRestrictionEvaluator,
+)
 class RuleEngine:
     """
     Orchestrates the execution of the Rule Engine.
@@ -39,6 +41,7 @@ class RuleEngine:
         self.health_evaluator = HealthEvaluator()
         self.immigration_evaluator = ImmigrationEvaluator()
         self.customs_evaluator = CustomsEvaluator()
+        self.entry_restriction_evaluator = EntryRestrictionEvaluator()
 
     def execute(
         self,
@@ -80,6 +83,11 @@ class RuleEngine:
                 loaded_rules,
             )
         )
+        entry_restriction_result = (
+            self.entry_restriction_evaluator.evaluate(
+                loaded_rules,
+            )
+        )
 
 
         return RuleEngineResult(
@@ -89,4 +97,5 @@ class RuleEngine:
             health=health_result,
             immigration=immigration_result,
             customs=customs_result,
+            entry_restriction=entry_restriction_result,
         )

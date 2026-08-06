@@ -188,6 +188,23 @@ class CustomsEvaluationResult:
     pet_import_rules: str | None
 
     remarks: str | None
+@dataclass
+class EntryRestrictionEvaluationResult:
+    """
+    Result produced by the Entry Restriction Evaluator.
+    """
+
+    restriction_type: str
+
+    reason: str | None
+
+    effective_date: date
+
+    expiry_date: date | None
+
+    source: str | None
+
+    remarks: str | None
 
 @dataclass
 class RuleEngineResult:
@@ -207,6 +224,6 @@ class RuleEngineResult:
 
     customs: CustomsEvaluationResult | None = None
 
-    entry_restriction: object | None = None
+    entry_restriction: EntryRestrictionEvaluationResult | None = None
 
 
