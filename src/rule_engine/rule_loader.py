@@ -8,7 +8,7 @@ from src.services.rule_engine.rule_query_service import (
     RuleQueryService,
 )
 from src.models.compliance.passport_rule import PassportRule
-
+from src.models.compliance.transit_rule import TransitRule
 class RuleLoader:
     """
     Loads all applicable compliance rules for a traveller.
@@ -38,7 +38,7 @@ class RuleLoader:
         return LoadedRules(
             visa_rule=visa_rule,
             passport_rule=self._load_passport_rule(context),
-            transit_rule=None,
+            transit_rule=self._load_transit_rule(context),
             health_rule=None,
             immigration_rule=None,
             customs_rule=None,
@@ -57,4 +57,18 @@ class RuleLoader:
             nationality_country_id=context.nationality_country_id,
             destination_country_id=context.destination_country_id,
             passport_type_id=context.passport_type_id,
+        )
+
+    def _load_transit_rule(
+        self,
+        context: ComplianceContext,
+    ) -> TransitRule | None:
+        """
+        Load the applicable transit rule.
+        """
+
+        return self.rule_query_service.get_transit_rule(
+            nationality_country_id=context.nationality_country_id,
+            transit_country_id=context.destination_country_id,
+            transit_airport_id=4,
         )

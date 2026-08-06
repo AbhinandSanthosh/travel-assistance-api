@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session
 
 from src.models.compliance.visa_rule import VisaRule
-
 from src.models.compliance.passport_rule import PassportRule
-
+from src.models.compliance.transit_rule import TransitRule
 class RuleQueryService:
     """
     Read-only queries used by the Rule Engine.
@@ -55,6 +54,31 @@ class RuleQueryService:
                 == destination_country_id,
                 PassportRule.passport_type_id
                 == passport_type_id,
+            )
+            .first()
+        )
+
+    
+
+    def get_transit_rule(
+        self,
+        nationality_country_id: int,
+        transit_country_id: int,
+        transit_airport_id: int,
+    ) -> TransitRule | None:
+        """
+        Retrieve the applicable transit rule.
+        """
+
+        return (
+            self.db.query(TransitRule)
+            .filter(
+                TransitRule.nationality_country_id
+                == nationality_country_id,
+                TransitRule.transit_country_id
+                == transit_country_id,
+                TransitRule.transit_airport_id
+                == transit_airport_id,
             )
             .first()
         )

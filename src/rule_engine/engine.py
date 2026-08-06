@@ -12,7 +12,7 @@ from src.rule_engine.models import (
 )
 from src.rule_engine.evaluators.passport import PassportEvaluator
 from src.rule_engine.rule_loader import RuleLoader
-
+from src.rule_engine.evaluators.transit import TransitEvaluator
 
 class RuleEngine:
     """
@@ -30,6 +30,7 @@ class RuleEngine:
         self.rule_loader = RuleLoader(db)
         self.visa_evaluator = VisaEvaluator()
         self.passport_evaluator = PassportEvaluator()
+        self.transit_evaluator = TransitEvaluator()
 
     def execute(
         self,
@@ -55,8 +56,12 @@ class RuleEngine:
         passport_result = self.passport_evaluator.evaluate(
             loaded_rules,
         )
+        transit_result = self.transit_evaluator.evaluate(
+            loaded_rules,
+        )
 
         return RuleEngineResult(
             visa=visa_result,
             passport=passport_result,
+            transit=transit_result,
         )

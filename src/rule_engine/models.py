@@ -93,7 +93,25 @@ class PassportEvaluationResult:
     passport_issue_date_required: bool | None
 
     remarks: str | None
-    
+
+@dataclass
+class TransitEvaluationResult:
+    """
+    Result produced by the Transit Evaluator.
+    """
+
+    transit_visa_required: bool
+
+    airside_transit_allowed: bool
+
+    baggage_collection_required: bool
+
+    overnight_transit_allowed: bool
+
+    max_transit_hours: int | None
+
+    remarks: str | None
+
 @dataclass
 class RuleEngineResult:
     """
@@ -104,7 +122,7 @@ class RuleEngineResult:
 
     passport: PassportEvaluationResult | None = None
 
-    transit: object | None = None
+    transit: TransitEvaluationResult | None = None
 
     health: object | None = None
 
