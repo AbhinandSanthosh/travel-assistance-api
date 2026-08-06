@@ -17,6 +17,7 @@ from src.rule_engine.evaluators.health import HealthEvaluator
 from src.rule_engine.evaluators.immigration import (
     ImmigrationEvaluator,
 )
+from src.rule_engine.evaluators.customs import CustomsEvaluator
 
 class RuleEngine:
     """
@@ -37,6 +38,7 @@ class RuleEngine:
         self.transit_evaluator = TransitEvaluator()
         self.health_evaluator = HealthEvaluator()
         self.immigration_evaluator = ImmigrationEvaluator()
+        self.customs_evaluator = CustomsEvaluator()
 
     def execute(
         self,
@@ -73,6 +75,11 @@ class RuleEngine:
                 loaded_rules,
             )
         )
+        customs_result = (
+            self.customs_evaluator.evaluate(
+                loaded_rules,
+            )
+        )
 
 
         return RuleEngineResult(
@@ -81,4 +88,5 @@ class RuleEngine:
             transit=transit_result,
             health=health_result,
             immigration=immigration_result,
+            customs=customs_result,
         )

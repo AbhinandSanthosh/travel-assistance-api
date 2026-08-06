@@ -13,6 +13,7 @@ from src.models.compliance.health_rule import HealthRule
 from src.models.compliance.immigration_rule import (
     ImmigrationRule,
 )
+from src.models.compliance.customs_rule import CustomsRule
 class RuleLoader:
     """
     Loads all applicable compliance rules for a traveller.
@@ -45,7 +46,7 @@ class RuleLoader:
             transit_rule=self._load_transit_rule(context),
             health_rule=self._load_health_rule(context),
             immigration_rule=self._load_immigration_rule(context),
-            customs_rule=None,
+            customs_rule=self._load_customs_rule(context),
             entry_restriction=None,
         )
 
@@ -96,5 +97,18 @@ class RuleLoader:
         """
 
         return self.rule_query_service.get_immigration_rule(
+            destination_country_id=context.destination_country_id,
+        )
+
+    def _load_customs_rule(
+        self,
+        context: ComplianceContext,
+    ) -> CustomsRule | None:
+        """
+        Load the applicable customs rule.
+        """
+
+        return self.rule_query_service.get_customs_rule(
+            nationality_country_id=context.nationality_country_id,
             destination_country_id=context.destination_country_id,
         )

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
 from src.models.compliance.customs_rule import CustomsRule
 from src.models.compliance.entry_restriction import EntryRestriction
@@ -162,6 +163,31 @@ class ImmigrationEvaluationResult:
     arrival_registration_required: bool
 
     remarks: str | None
+@dataclass
+class CustomsEvaluationResult:
+    """
+    Result produced by the Customs Evaluator.
+    """
+
+    alcohol_limit: str | None
+
+    tobacco_limit: str | None
+
+    currency_limit_amount: Decimal | None
+
+    currency: str | None
+
+    currency_declaration_required: bool
+
+    medication_rules: str | None
+
+    prohibited_items: str | None
+
+    restricted_items: str | None
+
+    pet_import_rules: str | None
+
+    remarks: str | None
 
 @dataclass
 class RuleEngineResult:
@@ -179,7 +205,7 @@ class RuleEngineResult:
 
     immigration: ImmigrationEvaluationResult | None = None
 
-    customs: object | None = None
+    customs: CustomsEvaluationResult | None = None
 
     entry_restriction: object | None = None
 

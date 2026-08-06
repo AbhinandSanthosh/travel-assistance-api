@@ -11,6 +11,7 @@ from src.models.compliance.health_rule_vaccine import (
 from src.models.compliance.immigration_rule import (
     ImmigrationRule,
 )
+from src.models.compliance.customs_rule import CustomsRule
 class RuleQueryService:
     """
     Read-only queries used by the Rule Engine.
@@ -131,6 +132,29 @@ class RuleQueryService:
             self.db.query(ImmigrationRule)
             .filter(
                 ImmigrationRule.destination_country_id
+                == destination_country_id,
+            )
+            .first()
+        )
+
+    def get_customs_rule(
+        self,
+        nationality_country_id: int,
+        destination_country_id: int,
+    ) -> CustomsRule | None:
+        """
+        Retrieve the applicable customs rule.
+        """
+
+        return (
+            self.db.query(CustomsRule)
+            .options(
+                joinedload(CustomsRule.currency)
+            )
+            .filter(
+                CustomsRule.nationality_country_id
+                == nationality_country_id,
+                CustomsRule.destination_country_id
                 == destination_country_id,
             )
             .first()
