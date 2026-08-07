@@ -55,8 +55,9 @@ def register_exception_handlers(app: FastAPI) -> None:
         request: Request,
         exc: AppException,
     ) -> JSONResponse:
+        
         return JSONResponse(
-            status_code=400,
+            status_code=getattr(exc, "status_code", 400),
             content={"detail": str(exc)},
         )
 

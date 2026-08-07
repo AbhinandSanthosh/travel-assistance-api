@@ -23,3 +23,16 @@ class APIClientRepository(BaseRepository[APIClient]):
                 APIClient.client_code == client_code,
             )
         )
+
+    def get_by_api_key(
+        self,
+        db: Session,
+        api_key: str,
+    ) -> APIClient | None:
+        """Return an API client by API key."""
+
+        return db.scalar(
+            select(APIClient).where(
+                APIClient.api_key == api_key,
+            )
+        )

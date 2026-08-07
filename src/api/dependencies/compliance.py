@@ -76,6 +76,22 @@ from src.repositories.compliance.rule_execution_log import (
 from src.services.compliance.rule_execution_log import (
     RuleExecutionLogService,
 )
+from src.api.dependencies.administration import (
+    get_api_client_repository,
+    get_api_request_log_service,
+    get_client_ip_whitelist_service,
+)
+from src.core.redis_client import get_redis_client
+from src.repositories.administration.api_client import (
+    APIClientRepository,
+)
+from src.services.administration.api_request_log import (
+    APIRequestLogService,
+)
+from src.services.administration.client_ip_whitelist import (
+    ClientIPWhitelistService,
+)
+from src.services.compliance.autocheck_service import AutoCheckService
 
 def get_rule_repository() -> RuleRepository:
     """Get Rule repository instance."""
@@ -282,3 +298,34 @@ def get_rule_execution_log_service(
     ),
 ) -> RuleExecutionLogService:
     return RuleExecutionLogService(repository)
+
+
+def get_autocheck_service(
+    api_client_repository: APIClientRepository = Depends(
+        get_api_client_repository,
+    ),
+    client_ip_whitelist_service: ClientIPWhitelistService = Depends(
+        get_client_ip_whitelist_service,
+    ),
+    api_request_log_service: APIRequestLogService = Depends(
+        get_api_request_log_service,
+    ),
+    compliance_check_service: ComplianceCheckService = Depends(
+        get_compliance_check_service,
+    ),
+    rule_execution_log_service: RuleExecutionLogService = Depends(
+        get_rule_execution_log_service,
+    ),
+) -> AutoCheckService:
+    """Get AutoCheckService instance: full request pipeline (API key,
+    client status, IP whitelist, rate limiting, request logging) plus
+    Rule Engine -> Decision -> persistence."""
+
+    return AutoCheckService(
+        api_client_repository,
+        client_ip_whitelist_service,
+        api_request_log_service,
+        compliance_check_service,
+        rule_execution_log_service,
+        get_redis_client(),
+    )

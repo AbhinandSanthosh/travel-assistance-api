@@ -113,6 +113,9 @@ from src.api.compliance.compliance_check import (
 from src.api.compliance.rule_execution_log import (
     router as rule_execution_log_router,
 )
+from src.api.compliance.autocheck import (
+    router as autocheck_router,
+)
 
 app = FastAPI(
     title=settings.app_name,
@@ -164,6 +167,7 @@ app.include_router(
 )
 app.include_router(compliance_check_router)
 app.include_router(rule_execution_log_router)
+app.include_router(autocheck_router)
 
 app.include_router(role_router)
 app.include_router(permission_router)
