@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
+from src.api.dependencies.auth import get_current_user
 from src.api.handlers import register_exception_handlers
 from src.api.reference.country import router as country_router
 from src.config.settings import settings
@@ -50,6 +51,7 @@ from src.api.compliance.entry_restriction import (
     router as entry_restriction_router,
 )
 
+from src.api.administration.auth import router as auth_router
 from src.api.administration.role import router as role_router
 from src.api.administration.permission import (
     router as permission_router,
@@ -126,71 +128,96 @@ app = FastAPI(
 # Register global exception handlers
 register_exception_handlers(app)
 
-# Register API routers
-app.include_router(country_router)
-app.include_router(region_router)
-app.include_router(currency_router)
-app.include_router(passport_type_router)
-app.include_router(visa_type_router)
-app.include_router(airline_router)
-app.include_router(airport_router)
-app.include_router(purpose_router)
-app.include_router(passenger_type_router)
-app.include_router(travel_authorization_router)
+# ---------------------------------------------------------------------------
+# Admin API (JWT protected) -- every router below requires a valid Bearer
+# token obtained from POST /api/v1/auth/login. Used by Compliance Officers,
+# Administrators, and internal staff to manage reference data, travel rules,
+# rule lifecycle, API clients, and system users.
+# ---------------------------------------------------------------------------
+_admin_auth = [Depends(get_current_user)]
 
-app.include_router(rule_router)
-app.include_router(visa_rule_router)
+app.include_router(auth_router)
+
+app.include_router(country_router)
+app.include_router(region_router, dependencies=_admin_auth)
+app.include_router(currency_router, dependencies=_admin_auth)
+app.include_router(passport_type_router)
+app.include_router(visa_type_router, dependencies=_admin_auth)
+app.include_router(airline_router, dependencies=_admin_auth)
+app.include_router(airport_router, dependencies=_admin_auth)
+app.include_router(purpose_router)
+app.include_router(passenger_type_router, dependencies=_admin_auth)
+app.include_router(travel_authorization_router, dependencies=_admin_auth)
+
+app.include_router(rule_router, dependencies=_admin_auth)
+app.include_router(visa_rule_router, dependencies=_admin_auth)
 app.include_router(
     travel_authorization_rule_router,
+    dependencies=_admin_auth,
 )
-app.include_router(passport_rule_router)
+app.include_router(passport_rule_router, dependencies=_admin_auth)
 app.include_router(
     transit_rule_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     health_rule_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     vaccine_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     health_rule_vaccine_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     immigration_rule_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     customs_rule_router,
+    dependencies=_admin_auth,
 )
 app.include_router(
     entry_restriction_router,
+    dependencies=_admin_auth,
 )
-app.include_router(compliance_check_router)
-app.include_router(rule_execution_log_router)
+app.include_router(compliance_check_router, dependencies=_admin_auth)
+app.include_router(rule_execution_log_router, dependencies=_admin_auth)
+
+app.include_router(role_router, dependencies=_admin_auth)
+app.include_router(permission_router, dependencies=_admin_auth)
+app.include_router(role_permission_router, dependencies=_admin_auth)
+app.include_router(user_router, dependencies=_admin_auth)
+app.include_router(api_client_router, dependencies=_admin_auth)
+app.include_router(client_ip_whitelist_router, dependencies=_admin_auth)
+app.include_router(audit_log_router, dependencies=_admin_auth)
+app.include_router(api_request_log_router, dependencies=_admin_auth)
+app.include_router(client_usage_statistics_router, dependencies=_admin_auth)
+
+app.include_router(source_registry_router, dependencies=_admin_auth)
+app.include_router(source_document_router, dependencies=_admin_auth)
+app.include_router(document_version_router, dependencies=_admin_auth)
+app.include_router(collection_log_router, dependencies=_admin_auth)
+app.include_router(document_validation_router, dependencies=_admin_auth)
+app.include_router(ai_extraction_router, dependencies=_admin_auth)
+
+app.include_router(rule_status_router, dependencies=_admin_auth)
+app.include_router(rule_version_router, dependencies=_admin_auth)
+app.include_router(rule_history_router, dependencies=_admin_auth)
+app.include_router(rule_approval_router, dependencies=_admin_auth)
+app.include_router(rule_simulation_router, dependencies=_admin_auth)
+
+# ---------------------------------------------------------------------------
+# Client API (API Key protected) -- authenticated via X-API-Key inside
+# AutoCheckService itself (validates api_clients.api_key, client status,
+# IP whitelist, and rate limit). No JWT dependency here: this is the
+# endpoint airlines / booking platforms / travel agencies call directly.
+# ---------------------------------------------------------------------------
 app.include_router(autocheck_router)
 
-app.include_router(role_router)
-app.include_router(permission_router)
-app.include_router(role_permission_router)
-app.include_router(user_router)
-app.include_router(api_client_router)
-app.include_router(client_ip_whitelist_router)
-app.include_router(audit_log_router)
-app.include_router(api_request_log_router)
-app.include_router(client_usage_statistics_router)
-
-app.include_router(source_registry_router)
-app.include_router(source_document_router)
-app.include_router(document_version_router)
-app.include_router(collection_log_router)
-app.include_router(document_validation_router)
-app.include_router(ai_extraction_router)
-
-app.include_router(rule_status_router)
-app.include_router(rule_version_router)
-app.include_router(rule_history_router)
-app.include_router(rule_approval_router)
-app.include_router(rule_simulation_router)
 
 @app.get("/")
 def root():

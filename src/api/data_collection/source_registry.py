@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.data_collection import (
@@ -23,6 +24,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=SourceRegistryResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -79,6 +81,7 @@ def get_source_registry(
 
 @router.put(
     "/{registry_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=SourceRegistryResponse,
 )
 def update_source_registry(
@@ -100,6 +103,7 @@ def update_source_registry(
 
 @router.delete(
     "/{registry_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_source_registry(

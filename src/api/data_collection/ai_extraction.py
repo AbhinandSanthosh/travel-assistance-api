@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.data_collection import (
@@ -25,6 +26,7 @@ router = APIRouter(
 
 @router.post(
     "/",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=AIExtractionResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -75,6 +77,7 @@ def get_ai_extraction(
 
 @router.put(
     "/{extraction_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=AIExtractionResponse,
 )
 def update_ai_extraction(
@@ -94,6 +97,7 @@ def update_ai_extraction(
 
 @router.delete(
     "/{extraction_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_ai_extraction(

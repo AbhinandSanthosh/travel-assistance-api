@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.administration import (
@@ -24,6 +25,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=RolePermissionResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -75,6 +77,7 @@ def get_role_permission(
 
 @router.put(
     "/{role_permission_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=RolePermissionResponse,
 )
 def update_role_permission(
@@ -95,6 +98,7 @@ def update_role_permission(
 
 @router.delete(
     "/{role_permission_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_role_permission(

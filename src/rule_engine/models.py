@@ -21,6 +21,7 @@ class JourneyRequest:
     destination: str
     purpose: str
     passport_type: str
+    origin: str | None = None
 
 
 @dataclass
@@ -33,6 +34,7 @@ class NormalizedJourney:
     destination_country_id: int
     purpose_id: int
     passport_type_id: int
+    origin_country_id: int | None = None
 
 
 @dataclass
@@ -46,6 +48,7 @@ class ComplianceContext:
     purpose_id: int
     passport_type_id: int
     travel_date: date
+    origin_country_id: int | None = None
 
 
 @dataclass

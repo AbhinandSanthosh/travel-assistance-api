@@ -214,6 +214,27 @@ class AutoCheckService:
             raise RateLimitExceededError(client.requests_per_minute)
 
     # ------------------------------------------------------------------
+    # Standalone key check: lets the frontend confirm an API key is
+    # valid/active/whitelisted right when it's entered, instead of only
+    # finding out on the first real /autocheck submission. Reuses the
+    # same stages 1-3 as the real pipeline so the result can never
+    # diverge from what /autocheck itself would decide -- deliberately
+    # skips stage 4 (rate limiting) so a validation ping never eats
+    # into the client's actual request quota.
+    # ------------------------------------------------------------------
+
+    def validate_key(
+        self,
+        db: Session,
+        api_key: str,
+        client_ip: str,
+    ) -> APIClient:
+        client = self._validate_api_key(db, api_key)
+        self._check_client_status(client)
+        self._check_ip_whitelist(db, client, client_ip)
+        return client
+
+    # ------------------------------------------------------------------
     # Pipeline stage 5: request logging.
     # ------------------------------------------------------------------
 
@@ -240,6 +261,7 @@ class AutoCheckService:
 
         request_body = {
             "nationality": payload.nationality,
+            "origin": payload.origin,
             "destination": payload.destination,
             "purpose": payload.purpose,
             "passport_type": payload.passport_type,
@@ -272,6 +294,7 @@ class AutoCheckService:
         db: Session,
         payload: AutoCheckRequest,
         client_ip: str,
+        api_key: str,
     ) -> AutoCheckResponse:
         request_id = uuid.uuid4().hex
         started_at = time.perf_counter()
@@ -280,7 +303,7 @@ class AutoCheckService:
 
         try:
             # 1. API Key Validation
-            client = self._validate_api_key(db, payload.api_key)
+            client = self._validate_api_key(db, api_key)
 
             # 2. Client Status Check
             self._check_client_status(client)
@@ -338,6 +361,7 @@ class AutoCheckService:
                     destination=payload.destination,
                     purpose=payload.purpose,
                     passport_type=payload.passport_type,
+                    origin=payload.origin,
                 ),
             )
         except ValueError as exc:
@@ -453,6 +477,7 @@ class AutoCheckService:
             {
                 "request": {
                     "nationality": payload.nationality,
+                    "origin": payload.origin,
                     "destination": payload.destination,
                     "purpose": payload.purpose,
                     "passport_type": payload.passport_type,
@@ -474,6 +499,7 @@ class AutoCheckService:
             json.dumps(
                 {
                     "nationality": payload.nationality,
+                    "origin": payload.origin,
                     "destination": payload.destination,
                     "purpose": payload.purpose,
                     "passport_type": payload.passport_type,
@@ -503,6 +529,7 @@ class AutoCheckService:
             compliance_check_id=compliance_check.id,
             request_id=compliance_check.request_id,
             nationality=payload.nationality,
+            origin=payload.origin,
             destination=payload.destination,
             purpose=payload.purpose,
             passport_type=payload.passport_type,

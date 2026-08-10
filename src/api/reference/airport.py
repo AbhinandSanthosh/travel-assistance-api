@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.reference import get_airport_service
@@ -18,6 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=AirportResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -63,6 +65,7 @@ def get_airport(
 
 @router.put(
     "/{airport_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=AirportResponse,
 )
 def update_airport(
@@ -81,6 +84,7 @@ def update_airport(
 
 @router.delete(
     "/{airport_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_airport(

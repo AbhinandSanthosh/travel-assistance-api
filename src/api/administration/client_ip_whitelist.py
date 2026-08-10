@@ -1,4 +1,5 @@
 from typing import Annotated
+from src.api.dependencies.auth import require_permission
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=ClientIPWhitelistResponse,
 )
 def create_client_ip_whitelist(
@@ -100,6 +102,7 @@ def get_client_whitelist_entries(
 
 @router.put(
     "/{whitelist_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=ClientIPWhitelistResponse,
 )
 def update_client_ip_whitelist(
@@ -122,6 +125,7 @@ def update_client_ip_whitelist(
 
 @router.delete(
     "/{whitelist_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
 )
 def delete_client_ip_whitelist(
     whitelist_id: int,

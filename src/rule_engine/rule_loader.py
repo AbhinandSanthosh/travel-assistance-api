@@ -89,6 +89,7 @@ class RuleLoader:
         return self.rule_query_service.get_health_rule(
             nationality_country_id=context.nationality_country_id,
             destination_country_id=context.destination_country_id,
+            origin_country_id=context.origin_country_id,
         )
 
     def _load_immigration_rule(
@@ -127,4 +128,5 @@ class RuleLoader:
         return self.rule_query_service.get_entry_restriction(
             nationality_country_id=context.nationality_country_id,
             destination_country_id=context.destination_country_id,
+            origin_country_id=context.origin_country_id,
         )

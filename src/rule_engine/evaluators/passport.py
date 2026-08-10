@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     LoadedRules,
     PassportEvaluationResult,
@@ -16,12 +13,12 @@ class PassportEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> PassportEvaluationResult:
+    ) -> PassportEvaluationResult | None:
 
         passport_rule = rules.passport_rule
 
         if passport_rule is None:
-            raise NoMatchingRuleError("passport")
+            return None
 
         return PassportEvaluationResult(
             minimum_validity_months=passport_rule.minimum_validity_months,

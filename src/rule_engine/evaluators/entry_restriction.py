@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     EntryRestrictionEvaluationResult,
     LoadedRules,
@@ -15,12 +12,12 @@ class EntryRestrictionEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> EntryRestrictionEvaluationResult:
+    ) -> EntryRestrictionEvaluationResult | None:
 
         entry_restriction = rules.entry_restriction
 
         if entry_restriction is None:
-            raise NoMatchingRuleError("entry restriction")
+            return None
 
         return EntryRestrictionEvaluationResult(
             restriction_type=entry_restriction.restriction_type,

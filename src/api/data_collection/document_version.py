@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.data_collection import (
@@ -25,6 +26,7 @@ router = APIRouter(
 
 @router.post(
     "/",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=DocumentVersionResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -78,6 +80,7 @@ def get_document_version(
 
 @router.put(
     "/{document_version_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     response_model=DocumentVersionResponse,
 )
 def update_document_version(
@@ -98,6 +101,7 @@ def update_document_version(
 
 @router.delete(
     "/{document_version_id}",
+    dependencies=[Depends(require_permission("data_collection.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_document_version(

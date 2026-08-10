@@ -97,29 +97,44 @@ class RuleQueryService:
         self,
         nationality_country_id: int,
         destination_country_id: int,
+        origin_country_id: int | None = None,
     ) -> HealthRule | None:
         """
-        Retrieve the applicable health rule together with
-        its associated vaccines.
+        Retrieve the applicable health rule together with its associated
+        vaccines.
+
+        Health requirements (e.g. Yellow Fever certificates) can depend
+        on the traveller's point of departure, not just nationality —
+        an Indian national flying to Poland via a Yellow-Fever-risk
+        country needs different handling than one flying direct. When an
+        origin is supplied, an origin-specific rule takes priority; if
+        none exists, this falls back to the origin-agnostic rule (the
+        row with origin_country_id IS NULL) so existing data keeps
+        working unchanged.
         """
 
-        return (
-            self.db.query(HealthRule)
-            .options(
-                joinedload(
-                    HealthRule.health_rule_vaccines
-                ).joinedload(
-                    HealthRuleVaccine.vaccine
-                    )
+        base_query = self.db.query(HealthRule).options(
+            joinedload(
+                HealthRule.health_rule_vaccines
+            ).joinedload(
+                HealthRuleVaccine.vaccine
             )
-            .filter(
-                HealthRule.nationality_country_id
-                == nationality_country_id,
-                HealthRule.destination_country_id
-                == destination_country_id,
-            )
-            .first()
+        ).filter(
+            HealthRule.nationality_country_id == nationality_country_id,
+            HealthRule.destination_country_id == destination_country_id,
         )
+
+        if origin_country_id is not None:
+            origin_specific = base_query.filter(
+                HealthRule.origin_country_id == origin_country_id,
+            ).first()
+
+            if origin_specific is not None:
+                return origin_specific
+
+        return base_query.filter(
+            HealthRule.origin_country_id.is_(None),
+        ).first()
 
     def get_immigration_rule(
         self,
@@ -165,21 +180,34 @@ class RuleQueryService:
         self,
         nationality_country_id: int,
         destination_country_id: int,
+        origin_country_id: int | None = None,
     ) -> EntryRestriction | None:
         """
         Retrieve the applicable entry restriction.
+
+        Same origin-aware matching as get_health_rule: an origin-specific
+        restriction (e.g. a route-based ban tied to the embarkation
+        country) is preferred over the origin-agnostic one when both the
+        origin is known and a matching row exists.
         """
 
-        return (
-            self.db.query(EntryRestriction)
-            .options(
-                joinedload(EntryRestriction.source)
-            )
-            .filter(
-                EntryRestriction.nationality_country_id
-                == nationality_country_id,
-                EntryRestriction.destination_country_id
-                == destination_country_id,
-            )
-            .first()
+        base_query = self.db.query(EntryRestriction).options(
+            joinedload(EntryRestriction.source)
+        ).filter(
+            EntryRestriction.nationality_country_id
+            == nationality_country_id,
+            EntryRestriction.destination_country_id
+            == destination_country_id,
         )
+
+        if origin_country_id is not None:
+            origin_specific = base_query.filter(
+                EntryRestriction.origin_country_id == origin_country_id,
+            ).first()
+
+            if origin_specific is not None:
+                return origin_specific
+
+        return base_query.filter(
+            EntryRestriction.origin_country_id.is_(None),
+        ).first()

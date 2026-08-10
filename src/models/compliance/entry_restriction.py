@@ -35,6 +35,18 @@ class EntryRestriction(BaseModel):
         nullable=False,
     )
 
+    origin_country_id: Mapped[int | None] = mapped_column(
+        ForeignKey("countries.id"),
+        nullable=True,
+        comment=(
+            "Country the traveller is departing/embarking from for this "
+            "leg (may differ from nationality). NULL means the "
+            "restriction applies regardless of origin and is used as the "
+            "fallback when no origin-specific restriction exists for "
+            "this nationality/destination."
+        ),
+    )
+
     restriction_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
@@ -84,6 +96,11 @@ class EntryRestriction(BaseModel):
     nationality_country: Mapped["Country"] = relationship(
         back_populates="nationality_entry_restrictions",
         foreign_keys=[nationality_country_id],
+    )
+
+    origin_country: Mapped["Country | None"] = relationship(
+        back_populates="origin_entry_restrictions",
+        foreign_keys=[origin_country_id],
     )
 
     source: Mapped["SourceRegistry"] = relationship(

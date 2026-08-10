@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.compliance import get_visa_rule_service
@@ -18,6 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=VisaRuleResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -63,6 +65,7 @@ def get_visa_rule(
 
 @router.put(
     "/{visa_rule_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=VisaRuleResponse,
 )
 def update_visa_rule(
@@ -81,6 +84,7 @@ def update_visa_rule(
 
 @router.delete(
     "/{visa_rule_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_visa_rule(

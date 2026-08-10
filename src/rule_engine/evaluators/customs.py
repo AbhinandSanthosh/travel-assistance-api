@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     CustomsEvaluationResult,
     LoadedRules,
@@ -15,12 +12,12 @@ class CustomsEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> CustomsEvaluationResult:
+    ) -> CustomsEvaluationResult | None:
 
         customs_rule = rules.customs_rule
 
         if customs_rule is None:
-            raise NoMatchingRuleError("customs")
+            return None
 
         return CustomsEvaluationResult(
             alcohol_limit=customs_rule.alcohol_limit,

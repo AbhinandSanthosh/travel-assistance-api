@@ -1,4 +1,5 @@
 from typing import Annotated
+from src.api.dependencies.auth import require_permission
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/passenger-types", tags=["Passenger Types"])
 
 @router.post(
     "/",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=PassengerTypeResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -76,6 +78,7 @@ def get_passenger_type(
 
 @router.put(
     "/{passenger_type_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=PassengerTypeResponse,
 )
 def update_passenger_type(
@@ -98,6 +101,7 @@ def update_passenger_type(
 
 @router.delete(
     "/{passenger_type_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_passenger_type(

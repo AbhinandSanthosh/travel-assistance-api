@@ -24,4 +24,5 @@ class ContextBuilder:
             purpose_id=journey.purpose_id,
             passport_type_id=journey.passport_type_id,
             travel_date=travel_date,
+            origin_country_id=journey.origin_country_id,
         )

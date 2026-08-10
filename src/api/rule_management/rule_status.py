@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.rule_management import (
@@ -24,6 +25,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("rule_management.write"))],
     response_model=RuleStatusResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -75,6 +77,7 @@ def get_rule_status(
 
 @router.put(
     "/{rule_status_id}",
+    dependencies=[Depends(require_permission("rule_management.write"))],
     response_model=RuleStatusResponse,
 )
 def update_rule_status(
@@ -95,6 +98,7 @@ def update_rule_status(
 
 @router.delete(
     "/{rule_status_id}",
+    dependencies=[Depends(require_permission("rule_management.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_rule_status(

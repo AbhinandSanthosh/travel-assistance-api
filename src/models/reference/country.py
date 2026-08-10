@@ -145,6 +145,13 @@ class Country(BaseModel):
         foreign_keys="HealthRule.nationality_country_id",
     )
 
+    origin_health_rules: Mapped[
+        list["HealthRule"]
+    ] = relationship(
+        back_populates="origin_country",
+        foreign_keys="HealthRule.origin_country_id",
+    )
+
     immigration_rules: Mapped[list["ImmigrationRule"]] = relationship(
         back_populates="destination_country",
         foreign_keys="[ImmigrationRule.destination_country_id]",
@@ -176,6 +183,13 @@ class Country(BaseModel):
     ] = relationship(
         back_populates="nationality_country",
         foreign_keys="EntryRestriction.nationality_country_id",
+    )
+
+    origin_entry_restrictions: Mapped[
+        list["EntryRestriction"]
+    ] = relationship(
+        back_populates="origin_country",
+        foreign_keys="EntryRestriction.origin_country_id",
     )
 
     travel_authorization_nationality_rules: Mapped[list["TravelAuthorizationRule"]] = relationship(

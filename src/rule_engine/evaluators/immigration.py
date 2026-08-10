@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     ImmigrationEvaluationResult,
     LoadedRules,
@@ -15,12 +12,12 @@ class ImmigrationEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> ImmigrationEvaluationResult:
+    ) -> ImmigrationEvaluationResult | None:
 
         immigration_rule = rules.immigration_rule
 
         if immigration_rule is None:
-            raise NoMatchingRuleError("immigration")
+            return None
 
         return ImmigrationEvaluationResult(
             onward_ticket_required=immigration_rule.onward_ticket_required,

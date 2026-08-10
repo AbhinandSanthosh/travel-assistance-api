@@ -1,4 +1,5 @@
 from typing import Annotated
+from src.api.dependencies.auth import require_permission
 
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ router = APIRouter(
 
 @router.post(
     "/",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=TravelAuthorizationResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -83,6 +85,7 @@ def get_travel_authorization(
 
 @router.put(
     "/{travel_authorization_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=TravelAuthorizationResponse,
 )
 def update_travel_authorization(
@@ -107,6 +110,7 @@ def update_travel_authorization(
 
 @router.delete(
     "/{travel_authorization_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_travel_authorization(

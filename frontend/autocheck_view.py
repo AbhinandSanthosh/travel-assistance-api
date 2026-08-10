@@ -9,6 +9,11 @@ import streamlit as st
 
 from api_client import APIError
 
+# st.dialog was renamed from st.experimental_dialog in Streamlit 1.37;
+# support either so this works across the >=1.35 range pinned in
+# requirements.txt.
+_dialog = getattr(st, "dialog", None) or st.experimental_dialog
+
 DEFAULT_API_KEY = "demo_api_key_123456789"
 
 FALLBACK_COUNTRIES = ["India", "Poland", "Saudi Arabia"]
@@ -120,8 +125,25 @@ def _load_reference_data(client):
     passport_types = _safe_list("/passport-types")
 
     reference = {
+        # Destination / origin are places, so these stay keyed by
+        # country_name (what the /autocheck API and every other
+        # country-picker in the app expects).
         "countries": (
             sorted(c["country_name"] for c in countries) if countries else FALLBACK_COUNTRIES
+        ),
+        # Nationality is a property of the traveller, not a place, so
+        # it's presented using countries.nationality (e.g. "Indian",
+        # "Saudi Arabian") rather than the country name. The API only
+        # resolves nationality by country_name, so we still submit
+        # country_name under the hood -- (label, value) pairs, same
+        # pattern as purposes/passport_types below.
+        "nationalities": (
+            sorted(
+                ((c["nationality"], c["country_name"]) for c in countries),
+                key=lambda pair: pair[0],
+            )
+            if countries
+            else [(name, name) for name in FALLBACK_COUNTRIES]
         ),
         "purposes": (
             [(p["purpose_code"], p["purpose_name"]) for p in purposes]
@@ -219,6 +241,11 @@ def _render_result(result):
         st.json(result)
 
 
+@_dialog("Auto Check Result")
+def _show_result_dialog(result):
+    _render_result(result)
+
+
 def render_autocheck(client):
     st.title("Auto Check")
     st.caption(
@@ -227,41 +254,87 @@ def render_autocheck(client):
         "for their journey."
     )
 
+    api_key = st.session_state.get("auth_client_api_key", DEFAULT_API_KEY)
+
     reference = _load_reference_data(client)
+
+    nationality_labels = [label for label, _ in reference["nationalities"]]
+    purpose_labels = [label for _, label in reference["purposes"]]
+    passport_labels = [label for _, label in reference["passport_types"]]
 
     with st.form("autocheck_form"):
         col1, col2 = st.columns(2)
 
         with col1:
-            nationality = st.selectbox("Nationality", reference["countries"])
-            purpose_label = st.selectbox(
-                "Purpose of travel",
-                [label for _, label in reference["purposes"]],
+            # Nationality and "travelling from" are grouped together
+            # here (rather than origin living in its own full-width
+            # row) since origin only makes sense in relation to the
+            # traveller's nationality.
+            nationality_label = st.selectbox(
+                "Nationality",
+                nationality_labels,
+                index=None,
+                placeholder="Select nationality",
+            )
+            origin_choice = st.selectbox(
+                "Travelling from (origin)",
+                reference["countries"],
+                index=None,
+                placeholder="Not specified (any origin)",
+                help=(
+                    "Only needed if the traveller is departing from a country "
+                    "other than their nationality, e.g. an Indian national "
+                    "flying to Poland via Saudi Arabia. Leaving this blank "
+                    "does NOT default to nationality -- it matches rules that "
+                    "apply regardless of origin. Some health and entry-"
+                    "restriction requirements depend on this."
+                ),
             )
 
         with col2:
             destination = st.selectbox(
                 "Destination",
                 reference["countries"],
-                index=min(1, len(reference["countries"]) - 1),
+                index=None,
+                placeholder="Select destination",
+            )
+            purpose_label = st.selectbox(
+                "Purpose of travel",
+                purpose_labels,
+                index=None,
+                placeholder="Select purpose of travel",
             )
             passport_label = st.selectbox(
                 "Passport type",
-                [label for _, label in reference["passport_types"]],
+                passport_labels,
+                index=None,
+                placeholder="Select passport type",
             )
-
-        api_key = st.text_input(
-            "API key",
-            value=st.session_state.get("autocheck_api_key", DEFAULT_API_KEY),
-            type="password",
-        )
 
         submitted = st.form_submit_button("Run auto-check", type="primary")
 
     if submitted:
-        if nationality == destination:
-            st.warning("Nationality and destination must be different countries.")
+        missing = [
+            field_name
+            for field_name, value in (
+                ("Nationality", nationality_label),
+                ("Destination", destination),
+                ("Purpose of travel", purpose_label),
+                ("Passport type", passport_label),
+            )
+            if value is None
+        ]
+        if missing:
+            st.warning(f"Please fill in: {', '.join(missing)}.")
             return
+
+        nationality = next(
+            country_name
+            for label, country_name in reference["nationalities"]
+            if label == nationality_label
+        )
+
+        
 
         purpose_code = next(
             code for code, label in reference["purposes"] if label == purpose_label
@@ -271,18 +344,21 @@ def render_autocheck(client):
         )
 
         payload = {
-            "api_key": api_key,
             "nationality": nationality,
             "destination": destination,
             "purpose": purpose_code,
             "passport_type": passport_code,
         }
+        if origin_choice is not None:
+            payload["origin"] = origin_choice
 
         try:
             with st.spinner("Running compliance check..."):
-                result = client.create("/autocheck", payload)
+                result = client.create(
+                    "/autocheck", payload, extra_headers={"X-API-Key": api_key}
+                )
             st.session_state["autocheck_result"] = result
-            st.session_state["autocheck_api_key"] = api_key
+            _show_result_dialog(result)
         except APIError as e:
             st.error(f"API error {e.status_code}: {e.detail}")
             return
@@ -290,6 +366,10 @@ def render_autocheck(client):
             st.error(f"Request failed: {e}")
             return
 
+    # A dialog only stays open for the run that triggered it -- any
+    # later rerun (e.g. widget interaction elsewhere on the page)
+    # closes it. This lets someone reopen their last result without
+    # having to run the check again.
     result = st.session_state.get("autocheck_result")
-    if result:
-        _render_result(result)
+    if result and st.button("View last result"):
+        _show_result_dialog(result)

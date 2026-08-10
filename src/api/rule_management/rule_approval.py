@@ -1,4 +1,5 @@
 from typing import Annotated
+from src.api.dependencies.auth import require_permission
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -21,6 +22,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("rule_management.write"))],
     response_model=RuleApprovalResponse,
 )
 def create_rule_approval(

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.reference import get_region_service
@@ -18,6 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=RegionResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -57,6 +59,7 @@ def get_region(
 
 @router.put(
     "/{region_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=RegionResponse,
 )
 def update_region(
@@ -75,6 +78,7 @@ def update_region(
 
 @router.delete(
     "/{region_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_region(

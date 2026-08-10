@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.rule_management import (

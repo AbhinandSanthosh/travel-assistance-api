@@ -10,8 +10,8 @@ class AutoCheckRequest(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "api_key": "demo_api_key_123456789",
                 "nationality": "India",
+                "origin": "Saudi Arabia",
                 "destination": "Poland",
                 "purpose": "TOUR",
                 "passport_type": "PP",
@@ -19,13 +19,21 @@ class AutoCheckRequest(BaseModel):
         }
     )
 
-    api_key: str = Field(
-        ...,
-        description="API key identifying the calling client.",
-    )
     nationality: str = Field(
         ...,
         description="Traveller's nationality (country name), e.g. 'India'.",
+    )
+    origin: str | None = Field(
+        None,
+        description=(
+            "Country the traveller is departing/embarking from for this "
+            "journey, e.g. 'Saudi Arabia' for an Indian national flying "
+            "to Poland via Riyadh. Optional — omit when travelling "
+            "directly from the nationality country. Some health and "
+            "entry-restriction requirements (e.g. Yellow Fever "
+            "certificates for travellers arriving from a risk country) "
+            "depend on this and not just nationality."
+        ),
     )
     destination: str = Field(
         ...,
@@ -162,6 +170,7 @@ class AutoCheckResponse(BaseModel):
     request_id: str
 
     nationality: str
+    origin: str | None = None
     destination: str
     purpose: str
     passport_type: str
@@ -175,3 +184,13 @@ class AutoCheckResponse(BaseModel):
     immigration: ImmigrationRequirementResponse | None = None
     customs: CustomsRequirementResponse | None = None
     entry_restriction: EntryRestrictionResponse | None = None
+
+
+class ValidateKeyResponse(BaseModel):
+    """Result of POST /autocheck/validate-key: confirms the key is
+    valid, active, and whitelisted for the caller's IP, without running
+    the rule engine."""
+
+    valid: bool = True
+    client_name: str
+    company_name: str

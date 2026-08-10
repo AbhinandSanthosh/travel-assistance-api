@@ -36,6 +36,18 @@ class HealthRule(BaseModel):
         nullable=False,
     )
 
+    origin_country_id: Mapped[int | None] = mapped_column(
+        ForeignKey("countries.id"),
+        nullable=True,
+        comment=(
+            "Country the traveller is departing/embarking from for this "
+            "leg (may differ from nationality, e.g. an Indian national "
+            "flying from Saudi Arabia). NULL means the rule applies "
+            "regardless of origin and is used as the fallback when no "
+            "origin-specific rule exists for this nationality/destination."
+        ),
+    )
+
     health_form_required: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
@@ -90,6 +102,11 @@ class HealthRule(BaseModel):
     nationality_country: Mapped["Country"] = relationship(
         back_populates="nationality_health_rules",
         foreign_keys=[nationality_country_id],
+    )
+
+    origin_country: Mapped["Country | None"] = relationship(
+        back_populates="origin_health_rules",
+        foreign_keys=[origin_country_id],
     )
 
     health_rule_vaccines: Mapped[

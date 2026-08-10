@@ -2,9 +2,6 @@ from src.rule_engine.models import (
     LoadedRules,
     VisaEvaluationResult,
 )
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 
 class VisaEvaluator:
     """
@@ -14,12 +11,12 @@ class VisaEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> VisaEvaluationResult:
+    ) -> VisaEvaluationResult | None:
 
         visa_rule = rules.visa_rule
 
         if visa_rule is None:
-            raise NoMatchingRuleError("visa")
+            return None
 
         return VisaEvaluationResult(
             visa_required=visa_rule.visa_required,

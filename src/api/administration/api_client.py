@@ -1,4 +1,5 @@
 from typing import Annotated
+from src.api.dependencies.auth import require_permission
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
@@ -24,6 +25,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=APIClientResponse,
 )
 def create_api_client(
@@ -80,6 +82,7 @@ def get_api_client(
 
 @router.put(
     "/{client_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=APIClientResponse,
 )
 def update_api_client(
@@ -102,6 +105,7 @@ def update_api_client(
 
 @router.delete(
     "/{client_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
 )
 def delete_api_client(
     client_id: int,

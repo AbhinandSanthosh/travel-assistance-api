@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.compliance import (
@@ -22,6 +23,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=VaccineResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -75,6 +77,7 @@ def get_vaccine(
 
 @router.put(
     "/{vaccine_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=VaccineResponse,
 )
 def update_vaccine(
@@ -95,6 +98,7 @@ def update_vaccine(
 
 @router.delete(
     "/{vaccine_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_vaccine(

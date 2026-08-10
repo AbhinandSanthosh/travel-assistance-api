@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     HealthEvaluationResult,
     LoadedRules,
@@ -16,12 +13,12 @@ class HealthEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> HealthEvaluationResult:
+    ) -> HealthEvaluationResult | None:
 
         health_rule = rules.health_rule
 
         if health_rule is None:
-            raise NoMatchingRuleError("health")
+            return None
 
         vaccines = [
             VaccineRequirement(

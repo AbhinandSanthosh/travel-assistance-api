@@ -1,6 +1,3 @@
-from src.exceptions.rule_engine.no_matching_rule import (
-    NoMatchingRuleError,
-)
 from src.rule_engine.models import (
     LoadedRules,
     TransitEvaluationResult,
@@ -15,12 +12,12 @@ class TransitEvaluator:
     def evaluate(
         self,
         rules: LoadedRules,
-    ) -> TransitEvaluationResult:
+    ) -> TransitEvaluationResult | None:
 
         transit_rule = rules.transit_rule
 
         if transit_rule is None:
-            raise NoMatchingRuleError("transit")
+            return None
 
         return TransitEvaluationResult(
             transit_visa_required=transit_rule.transit_visa_required,

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.administration import (
@@ -24,6 +25,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -69,6 +71,7 @@ def get_user(
 
 @router.put(
     "/{user_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     response_model=UserResponse,
 )
 def update_user(
@@ -87,6 +90,7 @@ def update_user(
 
 @router.delete(
     "/{user_id}",
+    dependencies=[Depends(require_permission("administration.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_user(

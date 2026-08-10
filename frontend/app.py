@@ -8,11 +8,13 @@ import streamlit as st
 
 from api_client import APIClient, APIError
 from entities import ENTITIES, ENUMS, CATEGORY_ORDER
+from auth_gate import render_gate, render_sidebar_identity
+import autocheck_view
 
 st.set_page_config(page_title="Travel Assistance API Console", page_icon="🧳", layout="wide")
 
 # --------------------------------------------------------------------------
-# Sidebar: connection + navigation
+# Connection settings (kept outside the auth gate so the URL survives login)
 # --------------------------------------------------------------------------
 if "base_url" not in st.session_state:
     st.session_state.base_url = "http://localhost:8000"
@@ -20,15 +22,34 @@ if "base_url" not in st.session_state:
 with st.sidebar:
     st.title("🧳 Travel Assistance API")
     st.session_state.base_url = st.text_input("API base URL", value=st.session_state.base_url)
-    client = APIClient(st.session_state.base_url)
 
     if st.button("🔌 Test connection", use_container_width=True):
         try:
-            health = client.health()
+            health = APIClient(st.session_state.base_url).health()
             st.success(f"Connected — {health}")
         except Exception as e:
             st.error(f"Could not reach API: {e}")
 
+# --------------------------------------------------------------------------
+# Role selection -> login -> authenticated client
+# --------------------------------------------------------------------------
+client = render_gate(st.session_state.base_url)
+if client is None:
+    st.stop()
+
+render_sidebar_identity()
+
+# --------------------------------------------------------------------------
+# Client role: hand off entirely to the traveller compliance-check view.
+# --------------------------------------------------------------------------
+if st.session_state.get("auth_role") == "client":
+    autocheck_view.render_autocheck(client)
+    st.stop()
+
+# --------------------------------------------------------------------------
+# Admin role: CRUD dashboard below.
+# --------------------------------------------------------------------------
+with st.sidebar:
     st.divider()
     st.caption("ENTITY")
 

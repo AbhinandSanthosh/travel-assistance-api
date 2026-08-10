@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.reference import get_currency_service
@@ -18,6 +19,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=CurrencyResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -54,6 +56,7 @@ def get_currency(
 
 @router.put(
     "/{currency_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=CurrencyResponse,
 )
 def update_currency(
@@ -71,6 +74,7 @@ def update_currency(
 
 @router.delete(
     "/{currency_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_currency(

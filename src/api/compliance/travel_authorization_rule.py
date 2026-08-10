@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.compliance import (
@@ -22,6 +23,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=TravelAuthorizationRuleResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -77,6 +79,7 @@ def get_travel_authorization_rule(
 
 @router.put(
     "/{travel_authorization_rule_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     response_model=TravelAuthorizationRuleResponse,
 )
 def update_travel_authorization_rule(
@@ -103,6 +106,7 @@ def update_travel_authorization_rule(
 
 @router.delete(
     "/{travel_authorization_rule_id}",
+    dependencies=[Depends(require_permission("compliance.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_travel_authorization_rule(

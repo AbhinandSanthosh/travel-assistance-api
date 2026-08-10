@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Response, status
+from src.api.dependencies.auth import require_permission
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.reference import get_passport_type_service
@@ -20,6 +21,7 @@ router = APIRouter(
 
 @router.post(
     "",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=PassportTypeResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -68,6 +70,7 @@ def get_passport_type(
 
 @router.put(
     "/{passport_type_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     response_model=PassportTypeResponse,
 )
 def update_passport_type(
@@ -87,6 +90,7 @@ def update_passport_type(
 
 @router.delete(
     "/{passport_type_id}",
+    dependencies=[Depends(require_permission("reference.write"))],
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_passport_type(

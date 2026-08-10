@@ -39,9 +39,22 @@ class JourneyAnalyzer:
             request.passport_type,
         )
 
+        # origin (point of departure/embarkation) is optional: most
+        # bookings originate from the traveller's nationality country,
+        # so callers aren't required to send it. When present, it must
+        # still resolve to a known country like any other reference field.
+        origin_country_id = None
+
+        if request.origin:
+            origin = self.resolver.get_country(
+                request.origin,
+            )
+            origin_country_id = origin.id
+
         return NormalizedJourney(
             nationality_country_id=nationality.id,
             destination_country_id=destination.id,
             purpose_id=purpose.id,
             passport_type_id=passport.id,
+            origin_country_id=origin_country_id,
         )

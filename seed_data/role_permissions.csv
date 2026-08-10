@@ -1,0 +1,31 @@
+role_name,permission_code
+Super Administrator,system.admin
+Super Administrator,system.health
+Super Administrator,administration.read
+Super Administrator,administration.write
+Super Administrator,reference.read
+Super Administrator,reference.write
+Super Administrator,compliance.read
+Super Administrator,compliance.write
+Super Administrator,rule_management.read
+Super Administrator,rule_management.write
+Super Administrator,data_collection.read
+Super Administrator,data_collection.write
+Administrator,administration.read
+Administrator,administration.write
+Administrator,reference.read
+Administrator,reference.write
+Administrator,compliance.read
+Administrator,compliance.write
+Administrator,system.health
+Compliance Manager,compliance.read
+Compliance Manager,compliance.write
+Compliance Manager,rule_management.read
+Compliance Manager,rule_management.write
+Compliance Manager,reference.read
+Data Collection Officer,data_collection.read
+Data Collection Officer,data_collection.write
+Data Collection Officer,reference.read
+Rule Reviewer,rule_management.read
+Rule Reviewer,rule_management.write
+Rule Reviewer,compliance.read
