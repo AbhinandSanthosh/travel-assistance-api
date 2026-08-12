@@ -1,5 +1,3 @@
-
-
 import json
 from datetime import date, datetime
 
@@ -10,6 +8,244 @@ from api_client import APIClient, APIError
 from entities import ENTITIES, ENUMS, CATEGORY_ORDER
 from auth_gate import render_gate, render_sidebar_identity
 import autocheck_view
+
+
+# --------------------------------------------------------------------------
+# Foreign-key relationships used by the form renderer.
+#
+# The value submitted to the API remains the integer ID.  The user sees
+# "ID - Name" in a selectbox.
+#
+# Example:
+#     region_id -> /regions -> region_name
+#     User sees: 1 - Asia
+#     Submitted value: 1
+# --------------------------------------------------------------------------
+RELATIONS = {
+    # Reference
+    "region_id": {
+        "endpoint": "/regions",
+        "label_field": "region_name",
+    },
+    "currency_id": {
+        "endpoint": "/currencies",
+        "label_field": "currency_name",
+    },
+    "country_id": {
+        "endpoint": "/countries",
+        "label_field": "country_name",
+    },
+    "destination_country_id": {
+        "endpoint": "/countries",
+        "label_field": "country_name",
+    },
+    "nationality_country_id": {
+        "endpoint": "/countries",
+        "label_field": "country_name",
+    },
+    "transit_country_id": {
+        "endpoint": "/countries",
+        "label_field": "country_name",
+    },
+    "passport_type_id": {
+        "endpoint": "/passport-types",
+        "label_field": "passport_name",
+    },
+    "visa_type_id": {
+        "endpoint": "/visa-types",
+        "label_field": "visa_name",
+    },
+    "purpose_id": {
+        "endpoint": "/purposes",
+        "label_field": "purpose_name",
+    },
+    "authorization_id": {
+        "endpoint": "/travel-authorizations/",
+        "label_field": "authorization_name",
+    },
+    "transit_airport_id": {
+        "endpoint": "/airports",
+        "label_field": "airport_name",
+    },
+    "vaccine_id": {
+        "endpoint": "/vaccines",
+        "label_field": "vaccine_name",
+    },
+
+    # Administration
+    "role_id": {
+        "endpoint": "/roles",
+        "label_field": "role_name",
+    },
+    "permission_id": {
+        "endpoint": "/permissions",
+        "label_field": "permission_name",
+    },
+    "client_id": {
+        "endpoint": "/api-clients",
+        "label_field": "client_name",
+    },
+
+    # Rule Management
+    "status_id": {
+        "endpoint": "/rule-statuses",
+        "label_field": "status_name",
+    },
+}
+
+
+def _relation_records(field_name):
+    """
+    Load records for a foreign-key field using the already-authenticated
+    APIClient.  This is important: do NOT create a separate requests/
+    api_get() client here, because the existing APIClient already handles
+    the authenticated API connection used by this admin console.
+    """
+    relation = RELATIONS.get(field_name)
+    if not relation:
+        return []
+
+    cache_key = f"relation_options__{field_name}"
+
+    # Keep a short-lived in-session cache so the API is not hit repeatedly
+    # on every widget rerun.
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+
+    try:
+        records = client.list(relation["endpoint"]) or []
+        st.session_state[cache_key] = records
+        return records
+    except APIError as e:
+        st.error(
+            f"Could not load options for '{field_name}': "
+            f"API error {e.status_code}: {e.detail}"
+        )
+        return []
+    except Exception as e:
+        st.error(
+            f"Could not load options for '{field_name}': {e}"
+        )
+        return []
+
+
+def _relation_options(field_name, current_value=None, required=True):
+    """
+    Build selectbox options.
+
+    Returns:
+        (display_options, display_to_id, selected_index)
+
+    display_options example:
+        ["1 - Asia", "2 - Europe", "3 - Africa"]
+
+    display_to_id example:
+        {"1 - Asia": 1, "2 - Europe": 2, "3 - Africa": 3}
+    """
+    relation = RELATIONS[field_name]
+    label_field = relation["label_field"]
+    records = _relation_records(field_name)
+
+    display_to_id = {}
+    current_id = None
+
+    if current_value is not None and current_value != "":
+        try:
+            current_id = int(current_value)
+        except (TypeError, ValueError):
+            current_id = current_value
+
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+
+        record_id = record.get("id")
+
+        # A normal API response should expose "id".  The fallback makes
+        # this work with table-specific ID names if one of the reference
+        # endpoints uses that shape.
+        if record_id is None:
+            for possible_id in (
+                "region_id",
+                "currency_id",
+                "country_id",
+                "passport_type_id",
+                "visa_type_id",
+                "purpose_id",
+                "authorization_id",
+                "airport_id",
+                "vaccine_id",
+                "role_id",
+                "permission_id",
+                "client_id",
+                "status_id",
+            ):
+                if record.get(possible_id) is not None:
+                    record_id = record[possible_id]
+                    break
+
+        if record_id is None:
+            continue
+
+        display_name = record.get(label_field)
+
+        if display_name is None:
+            # Safe fallback if the expected display field is absent.
+            display_name = record.get("name", record_id)
+
+        display_text = f"{record_id} - {display_name}"
+
+        # Avoid duplicate display labels.
+        if display_text not in display_to_id:
+            display_to_id[display_text] = record_id
+
+    display_options = list(display_to_id.keys())
+
+    # Optional FK fields get a blank choice.
+    if not required:
+        display_options = ["(none)"] + display_options
+
+    selected_index = 0
+
+    if current_id is not None:
+        for index, display_text in enumerate(display_options):
+            if display_to_id.get(display_text) == current_id:
+                selected_index = index
+                break
+
+    return display_options, display_to_id, selected_index
+
+
+def _render_relation_field(field, key, current_value=None, required=True, help_text=None):
+    """
+    Render a foreign-key field as a dropdown while returning the actual ID.
+    """
+    name = field["name"]
+    label = name.replace("_id", "").replace("_", " ").title()
+    label += " *" if required else ""
+
+    options, display_to_id, selected_index = _relation_options(
+        name,
+        current_value=current_value,
+        required=required,
+    )
+
+    if not options:
+        st.warning(f"No records available for {label}.")
+        return None
+
+    choice = st.selectbox(
+        label,
+        options=options,
+        index=selected_index,
+        help=help_text,
+        key=key,
+    )
+
+    if choice == "(none)":
+        return None
+
+    return display_to_id.get(choice)
 
 st.set_page_config(page_title="Travel Assistance API Console", page_icon="🧳", layout="wide")
 
@@ -53,6 +289,12 @@ with st.sidebar:
     st.divider()
     st.caption("ENTITY")
 
+    # Refresh both the current entity list and cached foreign-key options.
+    if st.button("🔄 Refresh reference options", use_container_width=True):
+        for _key in list(st.session_state.keys()):
+            if _key.startswith("relation_options__"):
+                st.session_state.pop(_key, None)
+
     category = st.selectbox("Category", CATEGORY_ORDER)
     names_in_category = [n for n, meta in ENTITIES.items() if meta["category"] == category]
     entity_name = st.radio("Entity", sorted(names_in_category), label_visibility="collapsed")
@@ -89,6 +331,17 @@ def render_field(field, key_prefix, current_value=None, force_optional=False):
 
     if ftype == "email":
         return st.text_input(label, value=current_value or "", help=help_text or "user@example.com", key=key) or None
+
+    # Foreign-key integer fields are rendered as dropdowns.
+    # This check MUST happen before the generic integer renderer.
+    if ftype == "int" and name in RELATIONS:
+        return _render_relation_field(
+            field=field,
+            key=key,
+            current_value=current_value,
+            required=required,
+            help_text=help_text,
+        )
 
     if ftype == "int":
         default_val = field.get("default")
@@ -285,8 +538,12 @@ with tab_map["📋 Browse"]:
 if "➕ Create" in tab_map:
     with tab_map["➕ Create"]:
         st.subheader(f"Create a new {entity_name[:-1] if entity_name.endswith('s') else entity_name}")
-        with st.form(key=f"create_form__{entity_name}"):
-            values = render_form_fields(entity["fields"], "create")
+
+        create_gen_key = f"create_gen__{entity_name}"
+        create_gen = st.session_state.get(create_gen_key, 0)
+
+        with st.form(key=f"create_form__{entity_name}__{create_gen}", clear_on_submit=True):
+            values = render_form_fields(entity["fields"], f"create_{create_gen}")
             submitted = st.form_submit_button("Create", type="primary")
         if submitted:
             missing = [
@@ -304,11 +561,13 @@ if "➕ Create" in tab_map:
                     st.success(f"Created successfully (id={result.get('id') if result else '?'})")
                     st.json(result)
                     st.session_state.pop(f"list_cache__{entity_name}", None)
+                    st.session_state[create_gen_key] = create_gen + 1
+                    st.rerun()
                 except APIError as e:
                     st.error(f"API error {e.status_code}: {e.detail}")
                 except Exception as e:
                     st.error(f"Request failed: {e}")
-
+                    
 # ---------------- Update ----------------
 if "✏️ Update" in tab_map:
     with tab_map["✏️ Update"]:
@@ -327,9 +586,10 @@ if "✏️ Update" in tab_map:
         record = st.session_state.get(f"update_record__{entity_name}")
         if record:
             st.caption("Loaded record — edit fields below, then Save.")
-            with st.form(key=f"update_form__{entity_name}"):
+            update_key_prefix = f"update_{record['id']}"
+            with st.form(key=f"update_form__{entity_name}__{record['id']}"):
                 update_fields = entity["fields"] + entity.get("extra_update_fields", [])
-                values = render_form_fields(update_fields, "update", record=record, force_optional=True)
+                values = render_form_fields(update_fields, update_key_prefix, record=record, force_optional=True)
                 submitted = st.form_submit_button("Save changes", type="primary")
             if submitted:
                 payload, invalid = clean_payload(values)
