@@ -82,6 +82,9 @@ from src.api.administration.api_client import (
 from src.api.administration.client_ip_whitelist import (
     router as client_ip_whitelist_router,
 )
+from src.api.administration.client_portal import (
+    router as client_portal_router,
+)
 from src.api.administration.audit_log import (
     router as audit_log_router,
 )
@@ -118,6 +121,7 @@ from src.api.compliance.rule_execution_log import (
 from src.api.compliance.autocheck import (
     router as autocheck_router,
 )
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -196,6 +200,7 @@ app.include_router(client_ip_whitelist_router, dependencies=_admin_auth)
 app.include_router(audit_log_router, dependencies=_admin_auth)
 app.include_router(api_request_log_router, dependencies=_admin_auth)
 app.include_router(client_usage_statistics_router, dependencies=_admin_auth)
+app.include_router(client_portal_router)
 
 app.include_router(source_registry_router, dependencies=_admin_auth)
 app.include_router(source_document_router, dependencies=_admin_auth)

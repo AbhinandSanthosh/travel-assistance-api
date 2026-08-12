@@ -223,6 +223,18 @@ class DecisionGenerator:
         #
         # Final Decision
         #
+        if requirements:
+            status = "ACTION_REQUIRED"
+            summary = (
+                "Traveller must complete one or more "
+                "requirements before travelling."
+            )
+        else:
+            status = "COMPLIANT"
+            summary = (
+                "Traveller meets all evaluated compliance requirements."
+            )
+
         return ComplianceDecision(
             status=status,
             summary=summary,

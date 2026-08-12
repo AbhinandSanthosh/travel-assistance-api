@@ -15,7 +15,7 @@ class APIClientBase(BaseModel):
 
     client_code: str
 
-    api_key: str
+    api_key: str | None = None
 
     contact_name: str | None = None
 
@@ -68,7 +68,17 @@ class APIClientResponse(
     BaseResponseSchema,
     APIClientBase,
 ):
-    """Schema returned for API Client."""
+    """Schema returned for API Client (admin console).
+
+    Never exposes api_key_hash or contact_password_hash -- only the
+    masked prefix/last-four, same as the portal's own /api-key status
+    endpoint.
+    """
+
+    api_key_prefix: str | None = None
+    api_key_last_four: str | None = None
+    api_key_created_at: datetime | None = None
+    api_key_revoked_at: datetime | None = None
 
     model_config = ConfigDict(
         from_attributes=True,

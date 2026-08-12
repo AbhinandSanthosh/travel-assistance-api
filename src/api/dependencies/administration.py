@@ -1,7 +1,9 @@
 from fastapi import Depends
 
+
 from src.repositories.administration.role import RoleRepository
 from src.services.administration.role import RoleService
+
 
 from src.repositories.administration.permission import (
     PermissionRepository,
@@ -9,6 +11,7 @@ from src.repositories.administration.permission import (
 from src.services.administration.permission import (
     PermissionService,
 )
+
 
 from src.repositories.administration.role_permission import (
     RolePermissionRepository,
@@ -19,6 +22,7 @@ from src.services.administration.role_permission import (
 from src.repositories.administration.user import (
     UserRepository,
 )
+
 
 from src.services.administration.user import (
     UserService,
@@ -53,6 +57,10 @@ from src.repositories.administration.client_usage_statistics import (
 from src.services.administration.client_usage_statistics import (
     ClientUsageStatisticsService,
 )
+from src.services.administration.client_portal_service import (
+    ClientPortalService,
+)
+
 
 def get_role_repository() -> RoleRepository:
     """Get Role repository instance."""
@@ -109,6 +117,7 @@ def get_role_permission_service(
         permission_repository,
     )
 
+
 def get_user_repository() -> UserRepository:
     """Get User repository instance."""
     return UserRepository()
@@ -128,6 +137,7 @@ def get_user_service(
         role_repository,
     )
 
+
 def get_api_client_repository() -> APIClientRepository:
     """Get API Client repository."""
     return APIClientRepository()
@@ -141,9 +151,25 @@ def get_api_client_service(
     """Get API Client service."""
     return APIClientService(repository)
 
+
 def get_client_ip_whitelist_repository() -> ClientIPWhitelistRepository:
     """Get Client IP Whitelist repository."""
     return ClientIPWhitelistRepository()
+
+
+def get_client_portal_service(
+    repository: APIClientRepository = Depends(
+        get_api_client_repository,
+    ),
+    whitelist_repository: ClientIPWhitelistRepository = Depends(
+        get_client_ip_whitelist_repository,
+    ),
+) -> ClientPortalService:
+    """Get Client Portal service."""
+    return ClientPortalService(
+        repository,
+        whitelist_repository,
+    )
 
 
 def get_client_ip_whitelist_service(
@@ -153,6 +179,7 @@ def get_client_ip_whitelist_service(
 ) -> ClientIPWhitelistService:
     """Get Client IP Whitelist service."""
     return ClientIPWhitelistService(repository)
+
 
 def get_audit_log_repository() -> AuditLogRepository:
     """Get Audit Log repository."""
@@ -167,6 +194,7 @@ def get_audit_log_service(
     """Get Audit Log service."""
     return AuditLogService(repository)
 
+
 def get_api_request_log_repository() -> APIRequestLogRepository:
     """Get API Request Log repository."""
     return APIRequestLogRepository()
@@ -179,6 +207,7 @@ def get_api_request_log_service(
 ) -> APIRequestLogService:
     """Get API Request Log service."""
     return APIRequestLogService(repository)
+
 
 def get_client_usage_statistics_repository() -> ClientUsageStatisticsRepository:
     """Get Client Usage Statistics repository."""

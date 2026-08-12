@@ -21,6 +21,14 @@ SESSION_ADMIN_TOKEN = "auth_admin_token"
 SESSION_ADMIN_USER = "auth_admin_user"
 SESSION_CLIENT_API_KEY = "auth_client_api_key"
 
+# Client-portal-specific session state (separate from the API key
+# itself -- a portal token proves "you're an authorized contact for
+# this company" and can manage/generate keys, but can never be used
+# against /autocheck).
+SESSION_CLIENT_PORTAL_TOKEN = "auth_client_portal_token"
+SESSION_CLIENT_ENTRY_MODE = "auth_client_entry_mode"  # "have_key" | "portal"
+SESSION_CLIENT_PORTAL_VIEW = "auth_client_portal_view"  # "login" | "signup"
+
 
 def _reset_session():
     for key in (
@@ -28,6 +36,9 @@ def _reset_session():
         SESSION_ADMIN_TOKEN,
         SESSION_ADMIN_USER,
         SESSION_CLIENT_API_KEY,
+        SESSION_CLIENT_PORTAL_TOKEN,
+        SESSION_CLIENT_ENTRY_MODE,
+        SESSION_CLIENT_PORTAL_VIEW,
     ):
         st.session_state.pop(key, None)
     # entity list caches etc. shouldn't leak across sessions/roles either
@@ -137,6 +148,38 @@ def _render_client_login(base_url: str):
         _reset_session()
         st.rerun()
 
+    mode = st.session_state.get(SESSION_CLIENT_ENTRY_MODE)
+
+    if mode is None:
+        st.write("How would you like to continue?")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.subheader("🔑 I have an API key")
+            st.write("Already have a key from your dashboard? Use it directly.")
+            if st.button("Continue with API key", use_container_width=True, type="primary"):
+                st.session_state[SESSION_CLIENT_ENTRY_MODE] = "have_key"
+                st.rerun()
+        with col2:
+            st.subheader("👤 Developer portal")
+            st.write("Sign up, log in, and generate an API key for your organisation.")
+            if st.button("Continue to portal", use_container_width=True, type="primary"):
+                st.session_state[SESSION_CLIENT_ENTRY_MODE] = "portal"
+                st.session_state[SESSION_CLIENT_PORTAL_VIEW] = "login"
+                st.rerun()
+        return
+
+    if st.button("← Choose a different option"):
+        st.session_state.pop(SESSION_CLIENT_ENTRY_MODE, None)
+        st.session_state.pop(SESSION_CLIENT_PORTAL_VIEW, None)
+        st.rerun()
+
+    if mode == "have_key":
+        _render_client_api_key_entry(base_url)
+    elif mode == "portal":
+        _render_client_portal(base_url)
+
+
+def _render_client_api_key_entry(base_url: str):
     st.write("Enter the API key issued to your organisation to run compliance checks.")
 
     with st.form("client_login_form"):
@@ -164,6 +207,136 @@ def _render_client_login(base_url: str):
                 st.error(f"API error {e.status_code}: {e.detail}")
         except Exception as e:
             st.error(f"Could not reach API at {base_url}. {e}")
+
+
+def _render_client_portal(base_url: str):
+    """Developer portal: sign up, log in, then generate/view an API
+    key from a small dashboard. Mirrors how Stripe/Twilio/OpenAI
+    separate 'having an account' from 'having a live secret'."""
+
+    portal_token = st.session_state.get(SESSION_CLIENT_PORTAL_TOKEN)
+    if portal_token:
+        _render_client_portal_dashboard(base_url, portal_token)
+        return
+
+    view = st.session_state.get(SESSION_CLIENT_PORTAL_VIEW, "login")
+    tab_login, tab_signup = st.tabs(["Log in", "Create account"])
+
+    with tab_login:
+        with st.form("portal_login_form"):
+            email = st.text_input("Contact email", key="portal_login_email")
+            password = st.text_input("Password", type="password", key="portal_login_password")
+            submitted = st.form_submit_button("Log in", type="primary")
+
+        if submitted:
+            if not email.strip() or not password:
+                st.warning("Enter both an email and a password.")
+            else:
+                client = APIClient(base_url)
+                try:
+                    with st.spinner("Signing in..."):
+                        result = client.client_login(email.strip(), password)
+                    st.session_state[SESSION_CLIENT_PORTAL_TOKEN] = result["accessToken"]
+                    st.rerun()
+                except APIError as e:
+                    if e.status_code == 401:
+                        st.error("Invalid email or password.")
+                    elif e.status_code == 403:
+                        st.error(e.detail)
+                    else:
+                        st.error(f"API error {e.status_code}: {e.detail}")
+                except Exception as e:
+                    st.error(f"Could not reach API at {base_url}. {e}")
+
+    with tab_signup:
+        st.caption("Creates your account only -- you'll generate an API key after logging in.")
+        with st.form("portal_signup_form"):
+            company_name = st.text_input("Company name")
+            client_name = st.text_input("Your name")
+            contact_email = st.text_input("Contact email", key="portal_signup_email")
+            contact_phone = st.text_input("Phone (optional)")
+            password = st.text_input(
+                "Password", type="password", key="portal_signup_password",
+                help="At least 8 characters.",
+            )
+            submitted = st.form_submit_button("Create account", type="primary")
+
+        if submitted:
+            if not all([company_name.strip(), client_name.strip(), contact_email.strip(), password]):
+                st.warning("Fill in company name, your name, email, and a password.")
+            elif len(password) < 8:
+                st.warning("Password must be at least 8 characters.")
+            else:
+                client = APIClient(base_url)
+                try:
+                    with st.spinner("Creating account..."):
+                        client.client_signup(
+                            company_name=company_name.strip(),
+                            client_name=client_name.strip(),
+                            contact_email=contact_email.strip(),
+                            password=password,
+                            contact_phone=contact_phone.strip() or None,
+                        )
+                    st.success("Account created! Log in on the 'Log in' tab to generate your API key.")
+                except APIError as e:
+                    if e.status_code == 409:
+                        st.error(e.detail)
+                    else:
+                        st.error(f"API error {e.status_code}: {e.detail}")
+                except Exception as e:
+                    st.error(f"Could not reach API at {base_url}. {e}")
+
+
+def _render_client_portal_dashboard(base_url: str, portal_token: str):
+    st.subheader("👤 Developer Portal")
+
+    if st.button("Log out of portal"):
+        st.session_state.pop(SESSION_CLIENT_PORTAL_TOKEN, None)
+        st.rerun()
+
+    client = APIClient(base_url)
+    try:
+        status_info = client.client_api_key_status(portal_token)
+    except APIError as e:
+        st.error(f"Could not load key status: {e.detail}")
+        return
+
+    if status_info.get("has_active_key"):
+        st.info(f"Active key: `{status_info['masked_key']}`")
+        st.caption(
+            "The full key was shown once, at generation time, and can't be "
+            "retrieved again -- rotate if it's been lost."
+        )
+    else:
+        st.warning("No active API key yet.")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Generate new key (rotates any existing key)", type="primary"):
+            try:
+                with st.spinner("Generating key..."):
+                    result = client.generate_client_api_key(portal_token)
+                st.session_state["_generated_key_display"] = result
+                st.rerun()
+            except APIError as e:
+                st.error(f"Could not generate key: {e.detail}")
+    with col2:
+        if status_info.get("has_active_key") and st.button("Revoke current key"):
+            try:
+                client.revoke_client_api_key(portal_token)
+                st.session_state.pop("_generated_key_display", None)
+                st.rerun()
+            except APIError as e:
+                st.error(f"Could not revoke key: {e.detail}")
+
+    generated = st.session_state.get("_generated_key_display")
+    if generated:
+        st.success("New API key generated -- copy it now, it won't be shown again.")
+        st.code(generated["api_key"], language=None)
+        if st.button("Use this key to run compliance checks now", type="primary"):
+            st.session_state[SESSION_CLIENT_API_KEY] = generated["api_key"]
+            st.session_state.pop("_generated_key_display", None)
+            st.rerun()
 
 
 def render_gate(base_url: str) -> APIClient | None:

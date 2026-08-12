@@ -36,7 +36,7 @@ def _dialog_factory(title):
 
 _RESULT_DIALOG_DECORATOR = _dialog_factory("Auto Check Result")
 
-DEFAULT_API_KEY = "demo_api_key_123456789"
+#DEFAULT_API_KEY = "demo_api_key_123456789"
 
 FALLBACK_COUNTRIES = ["India", "Poland", "Saudi Arabia"]
 FALLBACK_PURPOSES = [
@@ -599,7 +599,10 @@ def render_autocheck(client):
         "for their journey."
     )
 
-    api_key = st.session_state.get("auth_client_api_key", DEFAULT_API_KEY)
+    api_key = st.session_state.get("auth_client_api_key")
+    if not api_key:
+        st.error("No API key found in session. Please log in again.")
+        st.stop()
 
     reference = _load_reference_data(client)
 

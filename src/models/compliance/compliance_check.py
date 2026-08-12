@@ -61,6 +61,7 @@ class ComplianceCheck(BaseModel):
 
     rule_version: Mapped["RuleVersion"] = relationship(
         "RuleVersion",
+        back_populates="compliance_checks",
     )
 
     client: Mapped["APIClient"] = relationship(
@@ -68,7 +69,3 @@ class ComplianceCheck(BaseModel):
         back_populates="compliance_checks",
     )
 
-    rule_version: Mapped["RuleVersion"] = relationship(
-        "RuleVersion",
-        back_populates="compliance_checks",
-    )

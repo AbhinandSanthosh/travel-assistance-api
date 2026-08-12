@@ -252,7 +252,8 @@ ENTITIES = {
         "endpoint": "/api-clients", "category": "Administration", "ops": FULL,
         "fields": [
             f("client_name", "str", True), f("company_name", "str", True), f("client_code", "str", True),
-            f("api_key", "str", True), f("contact_name", "str"), f("contact_email", "email", True),
+            f("api_key", "str",help="Legacy plaintext key (admin-issued clients only). Leave blank for portal clients -- they get a hashed key from the Developer Portal instead."),
+            f("contact_name", "str"), f("contact_email", "email", True),
             f("contact_phone", "str"), f("subscription_plan", "enum", True, enum="subscription_plan"),
             f("requests_per_minute", "int", default=60), f("status", "bool", default=True),
             f("expires_at", "datetime"),

@@ -12,6 +12,7 @@ from typing import Any
 import redis
 from sqlalchemy.orm import Session
 
+from src.core.api_key import hash_api_key
 from src.enums.decision import Decision
 from src.enums.http_method import HTTPMethod
 from src.exceptions.base import AppException
@@ -121,9 +122,22 @@ class AutoCheckService:
     # ------------------------------------------------------------------
 
     def _validate_api_key(self, db: Session, api_key: str) -> APIClient:
-        """1. API Key Validation."""
+        """1. API Key Validation.
 
-        client = self.api_client_repository.get_by_api_key(db, api_key)
+        Looks up the hashed (SHA-256) portal-issued key first -- this
+        is the path every client created through the self-service
+        portal uses. Falls back to the legacy plaintext `api_key`
+        column only so clients seeded before the portal existed (e.g.
+        the demo client) keep working without needing to re-register.
+        """
+
+        client = self.api_client_repository.get_by_api_key_hash(
+            db,
+            hash_api_key(api_key),
+        )
+
+        if client is None:
+            client = self.api_client_repository.get_by_api_key(db, api_key)
 
         if client is None:
             raise InvalidAPIKeyError()
