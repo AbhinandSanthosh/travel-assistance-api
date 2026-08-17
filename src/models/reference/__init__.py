@@ -8,6 +8,7 @@ from .passenger_type import PassengerType
 from .travel_authorization import TravelAuthorization
 from .airline import Airline
 from .airport import Airport
+from .city import City
 
 __all__ = [
     "Country",
@@ -19,5 +20,6 @@ __all__ = [
     "PassengerType",
     "TravelAuthorization",
     "Airline",
-    "Airport"
+    "Airport",
+    "City"
 ]

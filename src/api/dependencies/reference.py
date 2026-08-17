@@ -54,6 +54,12 @@ from src.repositories.reference.travel_authorization_repository import (
 from src.services.reference.travel_authorization_service import (
     TravelAuthorizationService,
 )
+from src.repositories.reference.city_repository import (
+    CityRepository,
+)
+from src.services.reference.city_service import (
+    CityService,
+)
 
 def get_country_repository() -> CountryRepository:
     """Provide a CountryRepository instance."""
@@ -153,6 +159,24 @@ def get_airport_service(
     """Get Airport service instance."""
     return AirportService(
         airport_repository,
+        country_repository,
+    )
+
+def get_city_repository() -> CityRepository:
+    """Get City repository instance."""
+    return CityRepository()
+
+def get_city_service(
+    city_repository: CityRepository = Depends(
+        get_city_repository,
+    ),
+    country_repository: CountryRepository = Depends(
+        get_country_repository,
+    ),
+) -> CityService:
+    """Get City service instance."""
+    return CityService(
+        city_repository,
         country_repository,
     )
 

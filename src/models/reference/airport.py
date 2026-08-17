@@ -8,6 +8,7 @@ from src.db.base_model import BaseModel
 if TYPE_CHECKING:
     from .country import Country
     from src.models.compliance.transit_rule import TransitRule
+    from src.models.reference.city import City
 
 
 class Airport(BaseModel):
@@ -62,4 +63,14 @@ class Airport(BaseModel):
     transit_rules: Mapped[list["TransitRule"]] = relationship(
         "TransitRule",
         back_populates="transit_airport",
+    )
+
+    city_id: Mapped[int | None] = mapped_column(
+        ForeignKey("cities.id", name="fk_airports_city_id"),
+        nullable=True,  # flip to False once backfilled
+    )
+
+    city: Mapped["City | None"] = relationship(
+        "City",
+        back_populates="airports",
     )

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.models.reference.region import Region
+    from src.models.reference.city import City
     from src.models.reference.currency import Currency
     from .travel_authorization import TravelAuthorization
     from .airline import Airline
@@ -25,6 +26,7 @@ if TYPE_CHECKING:
     from src.models.data_collection.source_registry import (
         SourceRegistry,
     )
+    
     
 
 class Country(BaseModel):
@@ -206,6 +208,11 @@ class Country(BaseModel):
 
     source_registries: Mapped[list["SourceRegistry"]] = relationship(
         "SourceRegistry",
+        back_populates="country",
+    )
+
+    cities: Mapped[list["City"]] = relationship(
+        "City",
         back_populates="country",
     )
 

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.schemas.common import BaseResponseSchema
+from src.schemas.reference.city import CityResponse
 from src.schemas.reference.country import CountryResponse
 
 
@@ -93,5 +94,7 @@ class AirportResponse(
     """Schema returned for airport responses."""
 
     country: CountryResponse | None = None
+
+    city: CityResponse | None = None
 
     model_config = ConfigDict(from_attributes=True)

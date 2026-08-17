@@ -26,13 +26,13 @@ class PassportRuleBase(BaseModel):
         description="Minimum blank passport pages required",
     )
 
-    machine_readable_required: bool = False
+    machine_readable_required: bool | None = None
 
-    damaged_passport_allowed: bool = False
+    damaged_passport_allowed: bool | None = None
 
-    temporary_passport_allowed: bool = False
+    temporary_passport_allowed: bool | None = None
 
-    passport_issue_date_required: bool = False
+    passport_issue_date_required: bool | None = None
 
     condition_expression: dict[str, Any] | None = Field(
         default=None,

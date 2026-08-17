@@ -19,6 +19,7 @@ from src.api.reference.passenger_type import (
 from src.api.reference.travel_authorization import (
     router as travel_authorization_router,
 )
+from src.api.reference.city import router as city_router
 
 from src.api.compliance.rule import router as rule_router
 
@@ -152,6 +153,7 @@ app.include_router(airport_router, dependencies=_admin_auth)
 app.include_router(purpose_router)
 app.include_router(passenger_type_router, dependencies=_admin_auth)
 app.include_router(travel_authorization_router, dependencies=_admin_auth)
+app.include_router(city_router, dependencies=_admin_auth)
 
 app.include_router(rule_router, dependencies=_admin_auth)
 app.include_router(visa_rule_router, dependencies=_admin_auth)
