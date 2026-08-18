@@ -47,3 +47,17 @@ class InsufficientPermissionsError(AppException):
             code="INSUFFICIENT_PERMISSIONS",
             status_code=403,
         )
+
+
+class TooManyLoginAttemptsError(AppException):
+    """Raised when an IP exceeds the login rate limit."""
+
+    def __init__(self, limit: int) -> None:
+        super().__init__(
+            message=(
+                f"Too many login attempts. Limit is {limit} per minute. "
+                "Please wait and try again."
+            ),
+            code="TOO_MANY_LOGIN_ATTEMPTS",
+            status_code=429,
+        )

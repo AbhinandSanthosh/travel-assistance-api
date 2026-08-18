@@ -5,7 +5,7 @@ import logging
 import time
 import uuid
 from dataclasses import asdict
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -152,11 +152,21 @@ class AutoCheckService:
 
         if client.expires_at is not None:
             expires_at = client.expires_at
-            now = (
-                datetime.now(expires_at.tzinfo)
-                if expires_at.tzinfo
-                else datetime.utcnow()
-            )
+
+            # The DB column is a plain (non-tz) TIMESTAMP, so values read
+            # back from Postgres are always naive -- but an in-memory
+            # object set with an aware datetime before being persisted
+            # could still carry tzinfo. Normalize both cases to naive UTC
+            # before comparing, rather than branching on whichever one
+            # happens to show up (that branch previously compared aware
+            # vs. naive inconsistently depending on how the row was
+            # populated).
+            if expires_at.tzinfo is not None:
+                expires_at = expires_at.astimezone(timezone.utc).replace(
+                    tzinfo=None
+                )
+
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
 
             if expires_at < now:
                 raise ClientExpiredError(expires_at.isoformat())

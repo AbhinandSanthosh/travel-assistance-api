@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from src.core.logging_config import get_logger
 from src.exceptions.base import AppException
+
+logger = get_logger(__name__)
 from src.exceptions.reference.country import (
     CountryAlreadyExistsError,
     CountryNotFoundError,
@@ -119,4 +122,23 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=404,
             content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request,
+        exc: Exception,
+    ) -> JSONResponse:
+        """Catch-all for anything not covered above. Logs the full
+        traceback (file + console, since this is always an ERROR) and
+        returns a generic message -- never leaks internals to the
+        caller."""
+
+        logger.error(
+            f"Unhandled exception on {request.method} {request.url.path}",
+            exc_info=exc,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error"},
         )

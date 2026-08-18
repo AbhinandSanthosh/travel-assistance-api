@@ -1,13 +1,21 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
+import redis
+import time
+
 from src.api.dependencies.auth import get_current_user
+from src.config.settings import settings
+from src.core.client_ip import get_client_ip
 from src.core.jwt import create_access_token
+from src.core.logging_config import get_logger
+from src.core.redis_client import get_redis_client
 from src.core.security import verify_password
 from src.db.session import get_db
 from src.exceptions.administration.auth import (
     InactiveUserError,
     InvalidCredentialsError,
+    TooManyLoginAttemptsError,
 )
 from src.models.administration.user import User
 from src.repositories.administration.user import UserRepository
@@ -23,6 +31,31 @@ router = APIRouter(
 )
 
 _user_repository = UserRepository()
+logger = get_logger(__name__)
+
+
+def _check_login_rate_limit(client_ip: str) -> None:
+    """Fixed one-minute window per source IP, enforced via Redis
+    (same INCR + EXPIRE pattern as the /autocheck rate limiter).
+    Fails open if Redis itself is unreachable -- an unavailable cache
+    shouldn't take login down.
+    """
+
+    window = int(time.time() // 60)
+    key = f"ratelimit:login:{client_ip}:{window}"
+
+    try:
+        redis_client = get_redis_client()
+        current = redis_client.incr(key)
+        if current == 1:
+            redis_client.expire(key, 60)
+    except redis.exceptions.RedisError as exc:
+        logger.warning(f"Login rate limiting unavailable ({exc}); allowing request.")
+        return
+
+    if current > settings.login_rate_limit_per_minute:
+        logger.warning(f"Login rate limit exceeded for {client_ip}")
+        raise TooManyLoginAttemptsError(settings.login_rate_limit_per_minute)
 
 
 @router.post(
@@ -33,6 +66,7 @@ _user_repository = UserRepository()
 )
 def login(
     payload: LoginRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> LoginResponse:
     """Authenticate an administrative user (username/email + password)
@@ -42,6 +76,8 @@ def login(
     endpoint -- they authenticate to /autocheck with an X-API-Key.
     """
 
+    _check_login_rate_limit(get_client_ip(request))
+
     user = _user_repository.get_by_username(db, payload.username)
     if user is None:
         user = _user_repository.get_by_email(db, payload.username)
@@ -50,9 +86,15 @@ def login(
         payload.password,
         user.password_hash,
     ):
+        # Never log the submitted password. File-only (warning) --
+        # a wrong password is routine, not a terminal-worthy event.
+        # Repeated failures for the same identity are the signal
+        # worth alerting on; that belongs in rate-limiting, not here.
+        logger.warning(f"Failed login attempt for '{payload.username}'")
         raise InvalidCredentialsError()
 
     if not user.status:
+        logger.warning(f"Login attempt on inactive account '{user.username}'")
         raise InactiveUserError()
 
     token, expires_in = create_access_token(
@@ -62,6 +104,8 @@ def login(
             "role_id": user.role_id,
         },
     )
+
+    logger.success(f"User '{user.username}' logged in")
 
     return LoginResponse(access_token=token, expires_in=expires_in)
 

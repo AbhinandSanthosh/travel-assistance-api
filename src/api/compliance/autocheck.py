@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Header, Request, status
 from sqlalchemy.orm import Session
 
 from src.api.dependencies.compliance import get_autocheck_service
+from src.core.client_ip import get_client_ip
 from src.db.session import get_db
 from src.schemas.compliance.autocheck import (
     AutoCheckRequest,
@@ -14,17 +15,6 @@ router = APIRouter(
     prefix="/autocheck",
     tags=["Auto Check"],
 )
-
-
-def _client_ip(request: Request) -> str:
-    """Prefer X-Forwarded-For (behind a proxy/load balancer), fall back
-    to the direct connecting socket address."""
-
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-
-    return request.client.host if request.client else "unknown"
 
 
 @router.post(
@@ -45,7 +35,7 @@ def run_autocheck(
     service: AutoCheckService = Depends(get_autocheck_service),
 ) -> AutoCheckResponse:
 
-    return service.run(db, payload, _client_ip(request), x_api_key)
+    return service.run(db, payload, get_client_ip(request), x_api_key)
 
 
 @router.post(
@@ -70,7 +60,7 @@ def validate_key(
     confirm a key works right when it's entered, instead of only
     finding out on the first real submission."""
 
-    client = service.validate_key(db, x_api_key, _client_ip(request))
+    client = service.validate_key(db, x_api_key, get_client_ip(request))
     return ValidateKeyResponse(
         client_name=client.client_name,
         company_name=client.company_name,

@@ -121,6 +121,20 @@ from src.api.compliance.rule_execution_log import (
 from src.api.compliance.autocheck import (
     router as autocheck_router,
 )
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+
+from src.core.logging_config import setup_logging, get_logger
+from src.core.security_middleware import (
+    BodySizeLimitMiddleware,
+    SecurityHeadersMiddleware,
+)
+
+# Runs at import time, which happens during uvicorn's app-load step --
+# i.e. after uvicorn's own default logging setup, so this replaces it
+# rather than fighting it. Must stay before any other module logs.
+setup_logging()
+logger = get_logger(__name__)
 
 
 app = FastAPI(
@@ -131,6 +145,26 @@ app = FastAPI(
 
 # Register global exception handlers
 register_exception_handlers(app)
+
+# ---------------------------------------------------------------------------
+# Security middleware (Phase 1). Added innermost-first: Starlette applies
+# the LAST-added middleware as the OUTERMOST layer, so TrustedHost (added
+# last) runs first on every request, then CORS, then the body-size cap,
+# then routing, then SecurityHeaders decorates the response on the way out.
+# ---------------------------------------------------------------------------
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(BodySizeLimitMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allowed_origin_list,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key"],
+)
+app.add_middleware(
+    TrustedHostMiddleware,
+    allowed_hosts=settings.allowed_host_list,
+)
 
 # ---------------------------------------------------------------------------
 # Admin API (JWT protected) -- every router below requires a valid Bearer
@@ -222,6 +256,19 @@ app.include_router(rule_simulation_router, dependencies=_admin_auth)
 # endpoint airlines / booking platforms / travel agencies call directly.
 # ---------------------------------------------------------------------------
 app.include_router(autocheck_router)
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    logger.success(
+        f"{settings.app_name} v{settings.app_version} started "
+        f"({settings.app_env})"
+    )
+
+
+@app.on_event("shutdown")
+def on_shutdown() -> None:
+    logger.info(f"{settings.app_name} shutting down")
 
 
 @app.get("/")

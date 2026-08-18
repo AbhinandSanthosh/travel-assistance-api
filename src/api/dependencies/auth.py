@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.core.jwt import JWTError, decode_access_token
+from src.core.logging_config import get_logger
 from src.db.session import get_db
 from src.exceptions.administration.auth import (
     InactiveUserError,
@@ -18,6 +19,7 @@ _bearer_scheme = HTTPBearer(
 )
 
 _user_repository = UserRepository()
+logger = get_logger(__name__)
 
 
 def get_current_user(
@@ -30,7 +32,13 @@ def get_current_user(
     try:
         payload = decode_access_token(token)
     except JWTError as e:
-        print(f"DEBUG JWT decode failed: {e!r} | token={token!r}")
+        # Never log the token itself, even to the file -- only the
+        # failure reason and enough of the token to correlate it in
+        # support conversations without exposing a usable credential.
+        logger.warning(
+            f"JWT decode failed: {type(e).__name__} "
+            f"(token prefix: {token[:8]}...)"
+        )
         raise InvalidOrExpiredTokenError() from None
 
     user_id_raw = payload.get("sub")
