@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RolePermissionBase(BaseModel):
+class RolePermissionBase(StrictInputSchema):
     """Shared fields for RolePermission schemas."""
 
     role_id: int
@@ -16,7 +16,7 @@ class RolePermissionCreate(RolePermissionBase):
     pass
 
 
-class RolePermissionUpdate(BaseModel):
+class RolePermissionUpdate(StrictInputSchema):
     """Schema for updating a role-permission mapping."""
 
     role_id: int | None = None

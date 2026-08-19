@@ -1,0 +1,36 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 26.5.1
+    hooks:
+      - id: black
+        language_version: python3.12
+
+  - repo: https://github.com/PyCQA/isort
+    rev: 8.0.1
+    hooks:
+      - id: isort
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.22
+    hooks:
+      - id: ruff
+        args: [--fix]
+
+  # Run bandit from the project's own venv (via `local`) rather than
+  # bandit's own pre-commit mirror repo, so it always uses the version
+  # pinned in requirements.txt and picks up the [tool.bandit] config
+  # (exclude_dirs) in pyproject.toml automatically.
+  - repo: local
+    hooks:
+      - id: bandit
+        name: bandit (security lint)
+        entry: bandit -c pyproject.toml -r src frontend
+        language: system
+        pass_filenames: false
+        types: [python]
+
+  # pip-audit deliberately isn't a pre-commit hook: it needs network
+  # access to check the PyPI advisory database and takes longer than a
+  # commit-time check should. It runs in CI instead (see
+  # .github/workflows/ci.yml) so it can't block or slow down local
+  # commits, but still gates the pipeline before merge.

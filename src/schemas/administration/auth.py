@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field
+from src.schemas.common import StrictInputSchema
 
 
-class LoginRequest(BaseModel):
+class LoginRequest(StrictInputSchema):
     """POST /api/v1/auth/login request body."""
 
     username: str = Field(..., examples=["admin@example.com"])
@@ -21,8 +22,30 @@ class LoginResponse(BaseModel):
         serialization_alias="tokenType",
     )
     expires_in: int = Field(..., serialization_alias="expiresIn")
+    refresh_token: str = Field(..., serialization_alias="refreshToken")
 
     model_config = ConfigDict(populate_by_name=True)
+
+
+class RefreshRequest(StrictInputSchema):
+    """POST /api/v1/auth/refresh request body."""
+
+    refresh_token: str = Field(..., alias="refreshToken")
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+
+class LogoutRequest(StrictInputSchema):
+    """POST /api/v1/auth/logout request body.
+
+    refresh_token is optional -- logout always revokes the access
+    token making the request; passing the refresh token too revokes
+    it as well so it can't be used to mint further access tokens.
+    """
+
+    refresh_token: str | None = Field(default=None, alias="refreshToken")
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
 
 class CurrentUserResponse(BaseModel):

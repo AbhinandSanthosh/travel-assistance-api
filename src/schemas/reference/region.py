@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RegionBase(BaseModel):
+class RegionBase(StrictInputSchema):
     """Shared fields for Region schemas."""
 
     region_name: str = Field(
@@ -19,7 +19,7 @@ class RegionCreate(RegionBase):
     pass
 
 
-class RegionUpdate(BaseModel):
+class RegionUpdate(StrictInputSchema):
     """Schema for updating a region."""
 
     region_name: str | None = Field(

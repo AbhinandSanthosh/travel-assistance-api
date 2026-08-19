@@ -17,7 +17,7 @@ import streamlit as st
 from api_client import APIClient, APIError
 
 SESSION_ROLE = "auth_role"                 # "admin" | "client" | None
-SESSION_ADMIN_TOKEN = "auth_admin_token"
+SESSION_ADMIN_TOKEN = "auth_admin_token"  # nosec B105 -- dict key name, not a credential
 SESSION_ADMIN_USER = "auth_admin_user"
 SESSION_CLIENT_API_KEY = "auth_client_api_key"
 
@@ -25,7 +25,7 @@ SESSION_CLIENT_API_KEY = "auth_client_api_key"
 # itself -- a portal token proves "you're an authorized contact for
 # this company" and can manage/generate keys, but can never be used
 # against /autocheck).
-SESSION_CLIENT_PORTAL_TOKEN = "auth_client_portal_token"
+SESSION_CLIENT_PORTAL_TOKEN = "auth_client_portal_token"  # nosec B105 -- dict key name, not a credential
 SESSION_CLIENT_ENTRY_MODE = "auth_client_entry_mode"  # "have_key" | "portal"
 SESSION_CLIENT_PORTAL_VIEW = "auth_client_portal_view"  # "login" | "signup"
 

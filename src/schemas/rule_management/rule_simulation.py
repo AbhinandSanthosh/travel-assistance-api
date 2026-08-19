@@ -3,10 +3,10 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from src.enums.simulation_status import SimulationStatus
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleSimulationBase(BaseModel):
+class RuleSimulationBase(StrictInputSchema):
     """Shared fields for Rule Simulation schemas."""
 
     simulation_name: str

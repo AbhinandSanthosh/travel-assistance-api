@@ -3,10 +3,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class CustomsRuleBase(BaseModel):
+class CustomsRuleBase(StrictInputSchema):
     """Shared fields for CustomsRule schemas."""
 
     rule_id: int
@@ -77,7 +77,7 @@ class CustomsRuleCreate(CustomsRuleBase):
     pass
 
 
-class CustomsRuleUpdate(BaseModel):
+class CustomsRuleUpdate(StrictInputSchema):
     """Schema for updating a customs rule."""
 
     rule_id: int | None = None

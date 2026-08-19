@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from src.core.security import hash_password
+from src.core.token_store import revoke_all_refresh_tokens
 
 from src.exceptions.administration.role import (
     RoleNotFoundError,
@@ -177,14 +178,28 @@ class UserService:
                 update_data.pop("password")
             )
 
+        # Any of these change what an existing access token would
+        # claim to be true (password/role) or whether the account
+        # should be usable at all (status) -- force re-auth on the
+        # next refresh rather than letting stale sessions coast on
+        # their old claims for up to an hour.
+        _security_sensitive_change = bool(
+            {"password_hash", "role_id"} & update_data.keys()
+            or ("status" in update_data and update_data["status"] is False)
+        )
+
         for field, value in update_data.items():
             setattr(user, field, value)
 
-        return self.user_repository.save(
+        saved_user = self.user_repository.save(
             db=db,
             obj=user,
-    
         )
+
+        if _security_sensitive_change:
+            revoke_all_refresh_tokens(user.id)
+
+        return saved_user
 
     def delete_user(
         self,

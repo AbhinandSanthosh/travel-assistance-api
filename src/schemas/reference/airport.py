@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 from src.schemas.reference.country import CountryResponse
 
 
-class AirportBase(BaseModel):
+class AirportBase(StrictInputSchema):
     """Shared fields for Airport schemas."""
 
     airport_name: str = Field(
@@ -49,7 +49,7 @@ class AirportCreate(AirportBase):
     pass
 
 
-class AirportUpdate(BaseModel):
+class AirportUpdate(StrictInputSchema):
     """Schema for updating an airport."""
 
     airport_name: str | None = Field(

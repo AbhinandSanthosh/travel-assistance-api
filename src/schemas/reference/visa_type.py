@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class VisaTypeBase(BaseModel):
+class VisaTypeBase(StrictInputSchema):
     """Shared fields for VisaType schemas."""
 
     visa_code: str = Field(
@@ -28,7 +28,7 @@ class VisaTypeCreate(VisaTypeBase):
     pass
 
 
-class VisaTypeUpdate(BaseModel):
+class VisaTypeUpdate(StrictInputSchema):
     """Schema for updating a visa type."""
 
     visa_code: str | None = Field(

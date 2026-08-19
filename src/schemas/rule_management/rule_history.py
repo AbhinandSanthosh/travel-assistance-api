@@ -3,10 +3,10 @@
 from pydantic import BaseModel, ConfigDict
 
 from src.enums.change_type import ChangeType
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleHistoryBase(BaseModel):
+class RuleHistoryBase(StrictInputSchema):
     """Shared fields for Rule History schemas."""
 
     rule_id: int

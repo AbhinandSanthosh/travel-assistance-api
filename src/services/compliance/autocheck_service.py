@@ -3,7 +3,6 @@ import ipaddress
 import json
 import logging
 import time
-import uuid
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -13,6 +12,8 @@ import redis
 from sqlalchemy.orm import Session
 
 from src.core.api_key import hash_api_key
+from src.core.alerting import maybe_alert
+from src.core.request_id import get_request_id
 from src.enums.decision import Decision
 from src.enums.http_method import HTTPMethod
 from src.exceptions.base import AppException
@@ -121,7 +122,7 @@ class AutoCheckService:
     # the caller isn't a valid, active, whitelisted, within-limit client.
     # ------------------------------------------------------------------
 
-    def _validate_api_key(self, db: Session, api_key: str) -> APIClient:
+    def _validate_api_key(self, db: Session, api_key: str, client_ip: str) -> APIClient:
         """1. API Key Validation.
 
         Looks up the hashed (SHA-256) portal-issued key first -- this
@@ -140,6 +141,7 @@ class AutoCheckService:
             client = self.api_client_repository.get_by_api_key(db, api_key)
 
         if client is None:
+            maybe_alert("invalid_api_key", client_ip)
             raise InvalidAPIKeyError()
 
         return client
@@ -197,6 +199,11 @@ class AutoCheckService:
         try:
             ip_obj = ipaddress.ip_address(client_ip)
         except ValueError:
+            logger.warning(
+                f"IP whitelist rejected client '{client.client_code}': "
+                f"'{client_ip}' is not a parseable IP"
+            )
+            maybe_alert("ip_whitelist_rejected", client_ip, {"client_code": client.client_code})
             raise IPNotWhitelistedError(client_ip) from None
 
         for entry in active_entries:
@@ -212,6 +219,11 @@ class AutoCheckService:
                 if ip_obj in network:
                     return
 
+        logger.warning(
+            f"IP whitelist rejected client '{client.client_code}': "
+            f"'{client_ip}' matches no active entry"
+        )
+        maybe_alert("ip_whitelist_rejected", client_ip, {"client_code": client.client_code})
         raise IPNotWhitelistedError(client_ip)
 
     def _check_rate_limit(self, client: APIClient) -> None:
@@ -235,6 +247,11 @@ class AutoCheckService:
             return
 
         if current > client.requests_per_minute:
+            logger.warning(
+                f"Rate limit exceeded for client '{client.client_code}' "
+                f"({current}/{client.requests_per_minute} per minute)"
+            )
+            maybe_alert("rate_limit_exceeded", client.client_code)
             raise RateLimitExceededError(client.requests_per_minute)
 
     # ------------------------------------------------------------------
@@ -253,7 +270,7 @@ class AutoCheckService:
         api_key: str,
         client_ip: str,
     ) -> APIClient:
-        client = self._validate_api_key(db, api_key)
+        client = self._validate_api_key(db, api_key, client_ip)
         self._check_client_status(client)
         self._check_ip_whitelist(db, client, client_ip)
         return client
@@ -320,14 +337,14 @@ class AutoCheckService:
         client_ip: str,
         api_key: str,
     ) -> AutoCheckResponse:
-        request_id = uuid.uuid4().hex
+        request_id = get_request_id()
         started_at = time.perf_counter()
         client: APIClient | None = None
         status_code = 200
 
         try:
             # 1. API Key Validation
-            client = self._validate_api_key(db, api_key)
+            client = self._validate_api_key(db, api_key, client_ip)
 
             # 2. Client Status Check
             self._check_client_status(client)

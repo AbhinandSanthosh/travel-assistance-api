@@ -3,10 +3,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class EntryRestrictionBase(BaseModel):
+class EntryRestrictionBase(StrictInputSchema):
     """Shared fields for EntryRestriction schemas."""
 
     rule_id: int
@@ -49,7 +49,7 @@ class EntryRestrictionCreate(
     pass
 
 
-class EntryRestrictionUpdate(BaseModel):
+class EntryRestrictionUpdate(StrictInputSchema):
     """Schema for updating an entry restriction."""
 
     rule_id: int | None = None

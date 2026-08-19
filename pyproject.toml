@@ -15,6 +15,15 @@ profile = "black"
 line-length = 88
 target-version = "py312"
 
+[tool.bandit]
+# Migrations run raw DDL/SQL by design (see alembic/versions/) and
+# scripts/ are one-off maintenance tooling run by a human operator,
+# not request-serving code -- both produce noise, not signal, if
+# scanned. Test code uses `assert` deliberately (bandit's B101 flags
+# every one) -- excluded once tests/ exists. src/ and frontend/ are
+# real app code and stay in scope.
+exclude_dirs = ["alembic", "scripts", "tests"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

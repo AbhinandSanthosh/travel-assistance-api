@@ -3,10 +3,10 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 from src.enums.decision import Decision
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class ComplianceCheckBase(BaseModel):
+class ComplianceCheckBase(StrictInputSchema):
     """Base schema for compliance check."""
 
     request_id: str
@@ -24,7 +24,7 @@ class ComplianceCheckCreate(
     """Schema for creating a compliance check."""
 
 
-class ComplianceCheckUpdate(BaseModel):
+class ComplianceCheckUpdate(StrictInputSchema):
     """Schema for updating a compliance check."""
 
     request_id: str | None = None

@@ -1,4 +1,5 @@
 import bcrypt
+import re
 
 # NOTE: uses the bcrypt library directly rather than going through
 # passlib.CryptContext. passlib==1.7.4's bcrypt backend probes
@@ -27,3 +28,32 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     except ValueError:
         # Malformed/foreign hash format (e.g. not a bcrypt hash at all).
         return False
+
+
+_SPECIAL_CHARS = re.compile(r"[^A-Za-z0-9]")
+
+
+def password_policy_errors(password: str) -> list[str]:
+    """Return a list of human-readable violations of the password
+    policy, empty if the password is acceptable.
+
+    Policy (Phase 2): 8+ chars (already enforced at the schema level
+    via Field(min_length=8), checked again here defensively), at
+    least one uppercase, one lowercase, one digit, one special char.
+    Deliberately not checking against a common-password/breach list
+    here -- that's an external dependency/data-freshness concern,
+    better added later as its own piece if wanted.
+    """
+
+    errors = []
+    if len(password) < 8:
+        errors.append("must be at least 8 characters")
+    if not any(c.isupper() for c in password):
+        errors.append("must contain at least one uppercase letter")
+    if not any(c.islower() for c in password):
+        errors.append("must contain at least one lowercase letter")
+    if not any(c.isdigit() for c in password):
+        errors.append("must contain at least one digit")
+    if not _SPECIAL_CHARS.search(password):
+        errors.append("must contain at least one special character")
+    return errors

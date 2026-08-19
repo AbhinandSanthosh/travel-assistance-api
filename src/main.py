@@ -125,34 +125,43 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from src.core.logging_config import setup_logging, get_logger
+from src.core.audit_middleware import AuditLoggingMiddleware
+from src.core.request_id import RequestIDMiddleware
 from src.core.security_middleware import (
     BodySizeLimitMiddleware,
     SecurityHeadersMiddleware,
 )
 
-# Runs at import time, which happens during uvicorn's app-load step --
-# i.e. after uvicorn's own default logging setup, so this replaces it
-# rather than fighting it. Must stay before any other module logs.
-setup_logging()
+
+setup_logging(log_format=settings.log_format)
 logger = get_logger(__name__)
+
+
+from contextlib import asynccontextmanager
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.success(
+        f"{settings.app_name} v{settings.app_version} started "
+        f"({settings.app_env})"
+    )
+    yield
+    logger.info(f"{settings.app_name} shutting down")
 
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
-# Register global exception handlers
 register_exception_handlers(app)
 
-# ---------------------------------------------------------------------------
-# Security middleware (Phase 1). Added innermost-first: Starlette applies
-# the LAST-added middleware as the OUTERMOST layer, so TrustedHost (added
-# last) runs first on every request, then CORS, then the body-size cap,
-# then routing, then SecurityHeaders decorates the response on the way out.
-# ---------------------------------------------------------------------------
+
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuditLoggingMiddleware)
 app.add_middleware(BodySizeLimitMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -165,13 +174,9 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.allowed_host_list,
 )
+app.add_middleware(RequestIDMiddleware)
 
-# ---------------------------------------------------------------------------
-# Admin API (JWT protected) -- every router below requires a valid Bearer
-# token obtained from POST /api/v1/auth/login. Used by Compliance Officers,
-# Administrators, and internal staff to manage reference data, travel rules,
-# rule lifecycle, API clients, and system users.
-# ---------------------------------------------------------------------------
+
 _admin_auth = [Depends(get_current_user)]
 
 app.include_router(auth_router)
@@ -249,26 +254,8 @@ app.include_router(rule_history_router, dependencies=_admin_auth)
 app.include_router(rule_approval_router, dependencies=_admin_auth)
 app.include_router(rule_simulation_router, dependencies=_admin_auth)
 
-# ---------------------------------------------------------------------------
-# Client API (API Key protected) -- authenticated via X-API-Key inside
-# AutoCheckService itself (validates api_clients.api_key, client status,
-# IP whitelist, and rate limit). No JWT dependency here: this is the
-# endpoint airlines / booking platforms / travel agencies call directly.
-# ---------------------------------------------------------------------------
+
 app.include_router(autocheck_router)
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    logger.success(
-        f"{settings.app_name} v{settings.app_version} started "
-        f"({settings.app_env})"
-    )
-
-
-@app.on_event("shutdown")
-def on_shutdown() -> None:
-    logger.info(f"{settings.app_name} shutting down")
 
 
 @app.get("/")

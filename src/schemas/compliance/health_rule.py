@@ -2,10 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class HealthRuleBase(BaseModel):
+class HealthRuleBase(StrictInputSchema):
     """Shared fields for HealthRule schemas."""
 
     rule_id: int
@@ -48,7 +48,7 @@ class HealthRuleCreate(HealthRuleBase):
     pass
 
 
-class HealthRuleUpdate(BaseModel):
+class HealthRuleUpdate(StrictInputSchema):
     """Schema for updating a health rule."""
 
     rule_id: int | None = None

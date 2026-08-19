@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class PassportTypeBase(BaseModel):
+class PassportTypeBase(StrictInputSchema):
     """Shared fields for PassportType schemas."""
 
     passport_code: str = Field(
@@ -28,7 +28,7 @@ class PassportTypeCreate(PassportTypeBase):
     pass
 
 
-class PassportTypeUpdate(BaseModel):
+class PassportTypeUpdate(StrictInputSchema):
     """Schema for updating a passport type."""
 
     passport_code: str | None = Field(

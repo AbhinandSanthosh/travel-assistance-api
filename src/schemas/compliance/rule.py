@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.enums.rule_type import RuleType
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleBase(BaseModel):
+class RuleBase(StrictInputSchema):
     """Shared fields for Rule schemas."""
 
     rule_code: str = Field(
@@ -36,7 +36,7 @@ class RuleCreate(RuleBase):
     pass
 
 
-class RuleUpdate(BaseModel):
+class RuleUpdate(StrictInputSchema):
     """Schema for updating a rule."""
 
     rule_code: str | None = Field(

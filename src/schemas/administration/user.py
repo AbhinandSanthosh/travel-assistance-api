@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-from src.schemas.common import BaseResponseSchema
+from src.core.security import password_policy_errors
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class UserBase(BaseModel):
+class UserBase(StrictInputSchema):
     """Shared fields for User schemas."""
 
     username: str = Field(
@@ -36,8 +37,16 @@ class UserCreate(UserBase):
         min_length=8,
     )
 
+    @field_validator("password")
+    @classmethod
+    def _check_password_policy(cls, value: str) -> str:
+        errors = password_policy_errors(value)
+        if errors:
+            raise ValueError("Password does not meet policy: " + "; ".join(errors))
+        return value
 
-class UserUpdate(BaseModel):
+
+class UserUpdate(StrictInputSchema):
     """Schema for updating a user."""
 
     username: str | None = Field(
@@ -56,6 +65,16 @@ class UserUpdate(BaseModel):
         default=None,
         min_length=8,
     )
+
+    @field_validator("password")
+    @classmethod
+    def _check_password_policy(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        errors = password_policy_errors(value)
+        if errors:
+            raise ValueError("Password does not meet policy: " + "; ".join(errors))
+        return value
 
     role_id: int | None = None
 

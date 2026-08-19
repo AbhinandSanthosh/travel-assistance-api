@@ -2,10 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class TravelAuthorizationRuleBase(BaseModel):
+class TravelAuthorizationRuleBase(StrictInputSchema):
     """Shared fields for TravelAuthorizationRule schemas."""
 
     rule_id: int
@@ -50,7 +50,7 @@ class TravelAuthorizationRuleCreate(TravelAuthorizationRuleBase):
     pass
 
 
-class TravelAuthorizationRuleUpdate(BaseModel):
+class TravelAuthorizationRuleUpdate(StrictInputSchema):
     """Schema for updating a travel authorization rule."""
 
     rule_id: int | None = None

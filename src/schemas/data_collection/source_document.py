@@ -3,10 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.enums.document_type import DocumentType
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class SourceDocumentBase(BaseModel):
+class SourceDocumentBase(StrictInputSchema):
     """Shared fields for Source Document schemas."""
 
     source_id: int
@@ -34,7 +34,7 @@ class SourceDocumentCreate(SourceDocumentBase):
     pass
 
 
-class SourceDocumentUpdate(BaseModel):
+class SourceDocumentUpdate(StrictInputSchema):
     """Schema for updating a source document."""
 
     source_id: int | None = None

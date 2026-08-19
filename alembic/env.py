@@ -69,7 +69,14 @@ def run_migrations_online() -> None:
     """
     
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.database_url
+    # Migrations run DDL (CREATE/ALTER/DROP TABLE), which the app's
+    # runtime role deliberately can't do post-4.3 -- use the elevated
+    # migration connection here, not settings.database_url. See
+    # settings.migration_database_url and
+    # scripts/setup_least_privilege_db_role.sql.
+    configuration["sqlalchemy.url"] = (
+        settings.migration_database_url or settings.database_url
+    )
 
     connectable = engine_from_config(
         configuration,

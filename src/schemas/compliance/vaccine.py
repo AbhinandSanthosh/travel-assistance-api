@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class VaccineBase(BaseModel):
+class VaccineBase(StrictInputSchema):
     """Shared fields for Vaccine schemas."""
 
     vaccine_name: str = Field(
@@ -23,7 +23,7 @@ class VaccineCreate(VaccineBase):
     pass
 
 
-class VaccineUpdate(BaseModel):
+class VaccineUpdate(StrictInputSchema):
     """Schema for updating a vaccine."""
 
     vaccine_name: str | None = Field(

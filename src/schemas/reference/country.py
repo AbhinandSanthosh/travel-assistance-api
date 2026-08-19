@@ -2,10 +2,10 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class CountryBase(BaseModel):
+class CountryBase(StrictInputSchema):
     """Shared fields for Country schemas."""
 
     iso2: str = Field(
@@ -50,7 +50,7 @@ class CountryCreate(CountryBase):
     pass
 
 
-class CountryUpdate(BaseModel):
+class CountryUpdate(StrictInputSchema):
     """Schema for updating a country."""
 
     iso2: str | None = Field(default=None, min_length=2, max_length=2)

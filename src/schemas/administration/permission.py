@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class PermissionBase(BaseModel):
+class PermissionBase(StrictInputSchema):
     """Shared fields for Permission schemas."""
 
     permission_code: str = Field(
@@ -27,7 +27,7 @@ class PermissionCreate(PermissionBase):
     pass
 
 
-class PermissionUpdate(BaseModel):
+class PermissionUpdate(StrictInputSchema):
     """Schema for updating a permission."""
 
     permission_code: str | None = Field(

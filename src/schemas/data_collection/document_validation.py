@@ -5,10 +5,10 @@ from pydantic import BaseModel, ConfigDict
 from src.enums.validation_status import (
     ValidationStatus,
 )
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class DocumentValidationBase(BaseModel):
+class DocumentValidationBase(StrictInputSchema):
     """Base schema for document validation."""
 
     document_id: int
@@ -24,7 +24,7 @@ class DocumentValidationCreate(
     """Schema for creating a document validation."""
 
 
-class DocumentValidationUpdate(BaseModel):
+class DocumentValidationUpdate(StrictInputSchema):
     """Schema for updating a document validation."""
 
     document_id: int | None = None

@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 
 from src.enums.approval_status import ApprovalStatus
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleApprovalBase(BaseModel):
+class RuleApprovalBase(StrictInputSchema):
     """Shared fields for Rule Approval schemas."""
 
     rule_id: int

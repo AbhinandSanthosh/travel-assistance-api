@@ -49,6 +49,17 @@ class InsufficientPermissionsError(AppException):
         )
 
 
+class InvalidRefreshTokenError(AppException):
+    """Raised when a refresh token is missing, unknown, or expired."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            message="Invalid or expired refresh token. Please log in again.",
+            code="INVALID_REFRESH_TOKEN",
+            status_code=401,
+        )
+
+
 class TooManyLoginAttemptsError(AppException):
     """Raised when an IP exceeds the login rate limit."""
 

@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 from src.schemas.reference.country import CountryResponse
 
 
-class TravelAuthorizationBase(BaseModel):
+class TravelAuthorizationBase(StrictInputSchema):
     """Shared fields for TravelAuthorization schemas."""
 
     authorization_code: str = Field(..., max_length=20)
@@ -19,7 +19,7 @@ class TravelAuthorizationCreate(TravelAuthorizationBase):
     pass
 
 
-class TravelAuthorizationUpdate(BaseModel):
+class TravelAuthorizationUpdate(StrictInputSchema):
     """Schema for updating a travel authorization."""
 
     authorization_code: str | None = Field(

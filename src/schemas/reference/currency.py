@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class CurrencyBase(BaseModel):
+class CurrencyBase(StrictInputSchema):
     """Shared fields for Currency schemas."""
 
     currency_code: str = Field(
@@ -30,7 +30,7 @@ class CurrencyCreate(CurrencyBase):
     pass
 
 
-class CurrencyUpdate(BaseModel):
+class CurrencyUpdate(StrictInputSchema):
     """Schema for updating a currency."""
 
     currency_code: str | None = Field(

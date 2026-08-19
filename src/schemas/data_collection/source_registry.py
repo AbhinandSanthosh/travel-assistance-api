@@ -2,10 +2,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from src.enums.source_type import SourceType
 from src.enums.update_frequency import UpdateFrequency
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class SourceRegistryBase(BaseModel):
+class SourceRegistryBase(StrictInputSchema):
     """Shared fields for Source Registry schemas."""
 
     country_id: int
@@ -40,7 +40,7 @@ class SourceRegistryCreate(SourceRegistryBase):
     pass
 
 
-class SourceRegistryUpdate(BaseModel):
+class SourceRegistryUpdate(StrictInputSchema):
     """Schema for updating a source registry."""
 
     country_id: int | None = None

@@ -2,10 +2,10 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleVersionBase(BaseModel):
+class RuleVersionBase(StrictInputSchema):
     """Shared fields for Rule Version schemas."""
 
     rule_id: int
@@ -33,7 +33,7 @@ class RuleVersionCreate(RuleVersionBase):
     pass
 
 
-class RuleVersionUpdate(BaseModel):
+class RuleVersionUpdate(StrictInputSchema):
     """Schema for updating a rule version."""
 
     version_number: str | None = Field(

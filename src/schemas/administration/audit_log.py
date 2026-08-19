@@ -1,10 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 
 from src.enums.audit_action import AuditAction
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class AuditLogBase(BaseModel):
+class AuditLogBase(StrictInputSchema):
     """Base schema for Audit Log."""
 
     user_id: int

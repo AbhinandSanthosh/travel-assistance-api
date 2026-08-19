@@ -3,10 +3,10 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 from src.enums.subscription_plan import SubscriptionPlan
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class APIClientBase(BaseModel):
+class APIClientBase(StrictInputSchema):
     """Shared fields for API Client schemas."""
 
     client_name: str
@@ -38,7 +38,7 @@ class APIClientCreate(APIClientBase):
     pass
 
 
-class APIClientUpdate(BaseModel):
+class APIClientUpdate(StrictInputSchema):
     """Schema for updating an API client."""
 
     client_name: str | None = None

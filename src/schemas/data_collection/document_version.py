@@ -2,10 +2,10 @@ from datetime import date
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class DocumentVersionBase(BaseModel):
+class DocumentVersionBase(StrictInputSchema):
     """Shared fields for Document Version schemas."""
 
     document_id: int
@@ -31,7 +31,7 @@ class DocumentVersionCreate(DocumentVersionBase):
     pass
 
 
-class DocumentVersionUpdate(BaseModel):
+class DocumentVersionUpdate(StrictInputSchema):
     """Schema for updating a document version."""
 
     document_id: int | None = None

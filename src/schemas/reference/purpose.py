@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class PurposeBase(BaseModel):
+class PurposeBase(StrictInputSchema):
     """Shared fields for Purpose schemas."""
 
     purpose_code: str = Field(
@@ -25,7 +25,7 @@ class PurposeCreate(PurposeBase):
     pass
 
 
-class PurposeUpdate(BaseModel):
+class PurposeUpdate(StrictInputSchema):
     """Schema for updating a purpose."""
 
     purpose_code: str | None = Field(

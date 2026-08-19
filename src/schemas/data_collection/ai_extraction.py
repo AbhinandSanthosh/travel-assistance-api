@@ -6,10 +6,10 @@ from pydantic import BaseModel, ConfigDict
 from src.enums.extraction_status import (
     ExtractionStatus,
 )
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class AIExtractionBase(BaseModel):
+class AIExtractionBase(StrictInputSchema):
     """Base schema for AI extraction."""
 
     document_id: int
@@ -25,7 +25,7 @@ class AIExtractionCreate(
     """Schema for creating an AI extraction."""
 
 
-class AIExtractionUpdate(BaseModel):
+class AIExtractionUpdate(StrictInputSchema):
     """Schema for updating an AI extraction."""
 
     document_id: int | None = None

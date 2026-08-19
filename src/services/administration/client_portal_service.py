@@ -31,18 +31,13 @@ from src.schemas.administration.client_portal import (
     GeneratedAPIKeyResponse,
 )
 
-# Self-serve signups start on the lowest plan / a conservative rate
-# limit. Upgrading plan or limit is an admin-console action (or a
-# future "request an upgrade" flow) -- not something a client can
-# grant themselves.
 
 _SIGNUP_PLAN = SubscriptionPlan.STANDARD
 _SIGNUP_REQUESTS_PER_MINUTE = 30
 
-# Token "type" claim so a client-portal token can never be replayed
-# against admin-only endpoints (get_current_user) or vice versa.
 
-PORTAL_TOKEN_TYPE = "client_portal"
+
+PORTAL_TOKEN_TYPE = "client_portal"  
 
 _SLUG_RE = re.compile(r"[^A-Z0-9]+")
 

@@ -1,11 +1,13 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from src.schemas.common import StrictInputSchema
 
+from src.core.security import password_policy_errors
 from src.enums.subscription_plan import SubscriptionPlan
 
 
-class ClientSignupRequest(BaseModel):
+class ClientSignupRequest(StrictInputSchema):
     """POST /api/v1/client-portal/signup request body.
 
     This creates the *account* only -- it does not issue an API key.
@@ -21,6 +23,14 @@ class ClientSignupRequest(BaseModel):
     contact_phone: str | None = None
     password: str = Field(..., min_length=8, examples=["********"])
 
+    @field_validator("password")
+    @classmethod
+    def _check_password_policy(cls, value: str) -> str:
+        errors = password_policy_errors(value)
+        if errors:
+            raise ValueError("Password does not meet policy: " + "; ".join(errors))
+        return value
+
 
 class ClientSignupResponse(BaseModel):
     """POST /api/v1/client-portal/signup response."""
@@ -31,7 +41,7 @@ class ClientSignupResponse(BaseModel):
     message: str = "Account created. Log in to generate your API key."
 
 
-class ClientLoginRequest(BaseModel):
+class ClientLoginRequest(StrictInputSchema):
     """POST /api/v1/client-portal/login request body."""
 
     contact_email: EmailStr

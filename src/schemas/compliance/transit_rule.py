@@ -2,10 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class TransitRuleBase(BaseModel):
+class TransitRuleBase(StrictInputSchema):
     """Shared fields for TransitRule schemas."""
 
     rule_id: int
@@ -52,7 +52,7 @@ class TransitRuleCreate(TransitRuleBase):
     pass
 
 
-class TransitRuleUpdate(BaseModel):
+class TransitRuleUpdate(StrictInputSchema):
     """Schema for updating a transit rule."""
 
     rule_id: int | None = None

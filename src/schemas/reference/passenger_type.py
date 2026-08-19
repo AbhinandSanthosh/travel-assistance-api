@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class PassengerTypeBase(BaseModel):
+class PassengerTypeBase(StrictInputSchema):
     """Shared fields for PassengerType schemas."""
 
     passenger_type_code: str = Field(
@@ -25,7 +25,7 @@ class PassengerTypeCreate(PassengerTypeBase):
     pass
 
 
-class PassengerTypeUpdate(BaseModel):
+class PassengerTypeUpdate(StrictInputSchema):
     """Schema for updating a passenger type."""
 
     passenger_type_code: str | None = Field(

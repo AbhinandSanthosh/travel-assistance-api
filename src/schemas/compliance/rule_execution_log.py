@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleExecutionLogBase(BaseModel):
+class RuleExecutionLogBase(StrictInputSchema):
     """Base schema for rule execution log."""
 
     request_id: str
@@ -20,7 +20,7 @@ class RuleExecutionLogCreate(
     """Schema for creating a rule execution log."""
 
 
-class RuleExecutionLogUpdate(BaseModel):
+class RuleExecutionLogUpdate(StrictInputSchema):
     """Schema for updating a rule execution log."""
 
     request_id: str | None = None

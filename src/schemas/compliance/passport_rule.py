@@ -2,10 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class PassportRuleBase(BaseModel):
+class PassportRuleBase(StrictInputSchema):
     """Shared fields for PassportRule schemas."""
 
     rule_id: int
@@ -56,7 +56,7 @@ class PassportRuleCreate(PassportRuleBase):
     pass
 
 
-class PassportRuleUpdate(BaseModel):
+class PassportRuleUpdate(StrictInputSchema):
     """Schema for updating a passport rule."""
 
     rule_id: int | None = None

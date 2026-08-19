@@ -1,9 +1,10 @@
-from fastapi import Depends
+from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from src.core.jwt import JWTError, decode_access_token
 from src.core.logging_config import get_logger
+from src.core.token_store import is_access_token_revoked
 from src.db.session import get_db
 from src.exceptions.administration.auth import (
     InactiveUserError,
@@ -23,6 +24,7 @@ logger = get_logger(__name__)
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
@@ -45,6 +47,14 @@ def get_current_user(
     if user_id_raw is None:
         raise InvalidOrExpiredTokenError()
 
+    jti = payload.get("jti")
+    if jti is None or is_access_token_revoked(jti):
+        # Missing jti means a token minted before this revocation
+        # system existed -- treat it the same as revoked, forcing a
+        # fresh login rather than silently trusting an un-trackable
+        # token.
+        raise InvalidOrExpiredTokenError()
+
     try:
         user_id = int(user_id_raw)
     except (TypeError, ValueError):
@@ -56,6 +66,12 @@ def get_current_user(
 
     if not user.status:
         raise InactiveUserError()
+
+    # Stashed for AuditLoggingMiddleware (who's acting) and for
+    # POST /auth/logout (which jti/exp to revoke).
+    request.state.current_user = user
+    request.state.token_jti = jti
+    request.state.token_exp = payload.get("exp")
 
     return user
 

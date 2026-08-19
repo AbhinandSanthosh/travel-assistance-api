@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, UTC
 from typing import Any
+from uuid import uuid4
 
 from jose import JWTError, jwt
 
@@ -30,6 +31,10 @@ def create_access_token(
         "sub": subject,
         "iat": now,
         "exp": expire,
+        # Unique per token -- lets a single token be revoked (denylisted)
+        # without needing to invalidate the signing key or every token
+        # for that user. See src/core/token_store.py.
+        "jti": uuid4().hex,
     }
     if extra_claims:
         to_encode.update(extra_claims)

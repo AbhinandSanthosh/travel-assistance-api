@@ -2,12 +2,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 from src.enums.collection_status import CollectionStatus
 from src.enums.collection_type import CollectionType
 
-class CollectionLogBase(BaseModel):
+class CollectionLogBase(StrictInputSchema):
     """Shared fields for Collection Log schemas."""
 
     source_id: int
@@ -35,7 +35,7 @@ class CollectionLogCreate(CollectionLogBase):
     pass
 
 
-class CollectionLogUpdate(BaseModel):
+class CollectionLogUpdate(StrictInputSchema):
     """Schema for updating a collection log."""
 
     source_id: int | None = None

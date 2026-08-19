@@ -23,6 +23,7 @@ Usage:
 
 from __future__ import annotations
 
+import json
 import logging
 import logging.config
 import os
@@ -55,11 +56,40 @@ class ConsoleFilter(logging.Filter):
         return record.levelno == SUCCESS or record.levelno >= logging.ERROR
 
 
-def setup_logging(log_dir: str = "logs", log_level: str = "DEBUG") -> None:
+class JSONFormatter(logging.Formatter):
+    """One JSON object per line -- easy for a log aggregator (CloudWatch/
+    ELK/Datadog) to ingest, unlike the human-readable text formatter."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            "timestamp": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "request_id": getattr(record, "request_id", "-"),
+            "file": f"{record.filename}:{record.lineno}",
+        }
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload)
+
+
+def setup_logging(
+    log_dir: str = "logs",
+    log_level: str = "DEBUG",
+    log_format: str = "text",
+) -> None:
     """Configure logging for the whole app. Call once, at process
-    startup, before anything else logs."""
+    startup, before anything else logs.
+
+    log_format: "text" (human-readable, default) or "json" (structured,
+    for shipping into a log aggregator). Only affects the two file
+    handlers -- console stays human-readable either way.
+    """
 
     Path(log_dir).mkdir(parents=True, exist_ok=True)
+
+    file_formatter = "json" if log_format == "json" else "detailed"
 
     config = {
         "version": 1,
@@ -68,28 +98,35 @@ def setup_logging(log_dir: str = "logs", log_level: str = "DEBUG") -> None:
             "detailed": {
                 "format": (
                     "%(asctime)s | %(levelname)-8s | %(name)s | "
-                    "%(filename)s:%(lineno)d | %(message)s"
+                    "req=%(request_id)s | %(filename)s:%(lineno)d | "
+                    "%(message)s"
                 ),
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             },
             "console": {
-                "format": "%(asctime)s | %(levelname)-8s | %(message)s",
+                "format": (
+                    "%(asctime)s | %(levelname)-8s | req=%(request_id)s | "
+                    "%(message)s"
+                ),
                 "datefmt": "%H:%M:%S",
             },
+            "json": {"()": f"{__name__}.JSONFormatter"},
         },
         "filters": {
             "console_only": {"()": f"{__name__}.ConsoleFilter"},
+            "request_id": {"()": "src.core.request_id.RequestIDLogFilter"},
         },
         "handlers": {
             "console": {
                 "class": "logging.StreamHandler",
                 "formatter": "console",
-                "filters": ["console_only"],
+                "filters": ["console_only", "request_id"],
                 "level": "DEBUG",
             },
             "app_file": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "detailed",
+                "formatter": file_formatter,
+                "filters": ["request_id"],
                 "filename": os.path.join(log_dir, "app.log"),
                 "maxBytes": 10 * 1024 * 1024,  # 10 MB
                 "backupCount": 5,
@@ -98,7 +135,8 @@ def setup_logging(log_dir: str = "logs", log_level: str = "DEBUG") -> None:
             },
             "error_file": {
                 "class": "logging.handlers.RotatingFileHandler",
-                "formatter": "detailed",
+                "formatter": file_formatter,
+                "filters": ["request_id"],
                 "filename": os.path.join(log_dir, "errors.log"),
                 "maxBytes": 10 * 1024 * 1024,
                 "backupCount": 5,

@@ -2,12 +2,14 @@ from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
+from src.schemas.common import StrictInputSchema
 
 
-class AutoCheckRequest(BaseModel):
+class AutoCheckRequest(StrictInputSchema):
     """What a client submits to /autocheck: traveller details."""
 
     model_config = ConfigDict(
+        extra="forbid",
         json_schema_extra={
             "example": {
                 "nationality": "India",

@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RoleBase(BaseModel):
+class RoleBase(StrictInputSchema):
     """Shared fields for Role schemas."""
 
     role_name: str = Field(
@@ -22,7 +22,7 @@ class RoleCreate(RoleBase):
     pass
 
 
-class RoleUpdate(BaseModel):
+class RoleUpdate(StrictInputSchema):
     """Schema for updating a role."""
 
     role_name: str | None = Field(

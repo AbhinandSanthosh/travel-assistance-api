@@ -1,9 +1,9 @@
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.schemas.common import BaseResponseSchema
+from src.schemas.common import BaseResponseSchema, StrictInputSchema
 
 
-class RuleStatusBase(BaseModel):
+class RuleStatusBase(StrictInputSchema):
     """Shared fields for Rule Status schemas."""
 
     status_code: str = Field(
@@ -31,7 +31,7 @@ class RuleStatusCreate(RuleStatusBase):
     pass
 
 
-class RuleStatusUpdate(BaseModel):
+class RuleStatusUpdate(StrictInputSchema):
     """Schema for updating a rule status."""
 
     status_code: str | None = Field(
