@@ -59,9 +59,10 @@ class CollectionLogService:
     def get_collection_logs(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[CollectionLog]:
-
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_collection_log(
         self,

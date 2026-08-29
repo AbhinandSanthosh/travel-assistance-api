@@ -71,10 +71,12 @@ class RoleService:
     def get_all_roles(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Role]:
         """Retrieve all roles."""
 
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_role(
         self,

@@ -83,9 +83,10 @@ class DocumentVersionService:
     def get_document_versions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[DocumentVersion]:
-
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_document_version(
         self,

@@ -89,10 +89,13 @@ class HealthRuleVaccineService:
     def get_all_health_rule_vaccines(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[HealthRuleVaccine]:
         """Retrieve all health rule vaccines."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_health_rule_vaccine(
         self,

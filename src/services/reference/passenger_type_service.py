@@ -86,10 +86,13 @@ class PassengerTypeService:
     def get_all_passenger_types(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[PassengerType]:
         """Get all passenger types."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_passenger_type(
         self,

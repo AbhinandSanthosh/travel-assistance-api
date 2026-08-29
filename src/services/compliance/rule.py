@@ -68,10 +68,12 @@ class RuleService:
     def get_all_rules(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Rule]:
         """Retrieve all rules."""
 
-        return self.crud.get_all(db)
+        return self.crud.get_all(db, skip, limit)
 
     def update_rule(
         self,

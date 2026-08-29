@@ -82,10 +82,13 @@ class VisaTypeService:
     def get_all_visa_types(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[VisaType]:
         """Get all visa types."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_visa_type(
         self,

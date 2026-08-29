@@ -1,61 +1,128 @@
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, Field
 from src.schemas.common import StrictInputSchema
 
 
+class PassportInfoRequest(StrictInputSchema):
+    """Passport the passenger will travel on."""
+
+    issuing_country: str = Field(
+        ..., description="ISO 3166-1 alpha-2 code, e.g. 'IN'.",
+    )
+    type: str = Field(
+        ...,
+        description=(
+            "Passport type CODE from GET /passport-types, e.g. 'PP' "
+            "for ordinary."
+        ),
+    )
+    valid_until: date
+    valid_from: date | None = None
+    blank_pages: int | None = None
+
+
+class ExistingVisaRequest(StrictInputSchema):
+    """A visa the passenger already holds -- may satisfy a
+    destination or transit requirement without needing a new one."""
+
+    type: str = Field(..., description="e.g. SCHENGEN, TOURIST, WORK.")
+    issuing_country: str = Field(..., description="ISO alpha-2.")
+    valid_from: date | None = None
+    valid_until: date | None = None
+    entries: str | None = Field(
+        default=None, description="SINGLE, MULTIPLE, or UNLIMITED.",
+    )
+
+
+class PassengerRequest(StrictInputSchema):
+    """Complete passenger profile for the journey being checked."""
+
+    nationality: str = Field(
+        ..., description="ISO alpha-2 code of citizenship, e.g. 'IN'.",
+    )
+    passport: PassportInfoRequest
+    country_of_residence: str | None = Field(
+        default=None,
+        description="ISO alpha-2, if different from nationality.",
+    )
+    existing_visas: list[ExistingVisaRequest] = Field(default_factory=list)
+    passenger_type: str | None = Field(
+        default=None, description="ADULT, CHILD, INFANT, or CREW.",
+    )
+    special_status: str | None = Field(
+        default=None,
+        description="DIPLOMAT, REFUGEE, STATELESS, SEAMAN, MILITARY, or omit.",
+    )
+
+
+class JourneySegmentRequest(StrictInputSchema):
+    """A single flight leg. Only needed for multi-leg itineraries --
+    for a direct route, just set journey.origin/destination."""
+
+    departure_airport: str = Field(..., description="IATA code, e.g. 'COK'.")
+    arrival_airport: str = Field(..., description="IATA code, e.g. 'DOH'.")
+    airline: str | None = None
+    flight_number: str | None = None
+    departure_datetime: datetime | None = None
+
+
+class TransitPointRequest(StrictInputSchema):
+    """An intermediate stop, when known explicitly rather than
+    derived from `segments`. The transit country/airport are resolved
+    server-side from the IATA code -- don't send them."""
+
+    airport: str = Field(..., description="IATA code of the connecting airport.")
+    duration_minutes: int | None = None
+    requires_immigration: bool = False
+    separate_ticket: bool = False
+
+
+class JourneyRequestSchema(StrictInputSchema):
+    """Itinerary for the check. Provide EITHER just origin+destination
+    (direct route assumed), OR explicit transit_points, OR a full
+    segments list -- transit points are derived automatically from
+    segments if not given explicitly."""
+
+    origin: str = Field(..., description="IATA airport code, e.g. 'COK'.")
+    destination: str = Field(..., description="IATA airport code, e.g. 'FRA'.")
+    travel_date: date
+    purpose: str = Field(
+        ..., description="Purpose CODE from GET /purposes, e.g. 'TOUR'.",
+    )
+    return_date: date | None = None
+    segments: list[JourneySegmentRequest] = Field(default_factory=list)
+    transit_points: list[TransitPointRequest] = Field(default_factory=list)
+
+
 class AutoCheckRequest(StrictInputSchema):
-    """What a client submits to /autocheck: traveller details."""
+    """What a client submits to /autocheck: full passenger + journey."""
 
     model_config = ConfigDict(
         extra="forbid",
         json_schema_extra={
             "example": {
-                "nationality": "India",
-                "origin": "Saudi Arabia",
-                "destination": "Poland",
-                "purpose": "TOUR",
-                "passport_type": "PP",
+                "passenger": {
+                    "nationality": "IN",
+                    "passport": {
+                        "issuing_country": "IN",
+                        "type": "PP",
+                        "valid_until": "2027-04-15",
+                    },
+                },
+                "journey": {
+                    "origin": "COK",
+                    "destination": "FRA",
+                    "travel_date": "2026-09-15",
+                    "purpose": "TOUR",
+                },
             }
-        }
+        },
     )
 
-    nationality: str = Field(
-        ...,
-        description="Traveller's nationality (country name), e.g. 'India'.",
-    )
-    origin: str | None = Field(
-        None,
-        description=(
-            "Country the traveller is departing/embarking from for this "
-            "journey, e.g. 'Saudi Arabia' for an Indian national flying "
-            "to Poland via Riyadh. Optional — omit when travelling "
-            "directly from the nationality country. Some health and "
-            "entry-restriction requirements (e.g. Yellow Fever "
-            "certificates for travellers arriving from a risk country) "
-            "depend on this and not just nationality."
-        ),
-    )
-    destination: str = Field(
-        ...,
-        description="Destination country name, e.g. 'Poland'.",
-    )
-    purpose: str = Field(
-        ...,
-        description=(
-            "Purpose CODE from GET /purposes, e.g. 'TOUR' — not the "
-            "display name ('Tourism'). Either is accepted, but the code "
-            "is what the field is meant to hold."
-        ),
-    )
-    passport_type: str = Field(
-        ...,
-        description=(
-            "Passport type CODE from GET /passport-types, e.g. 'PP' for "
-            "ordinary passport — not the display name."
-        ),
-    )
+    passenger: PassengerRequest
+    journey: JourneyRequestSchema
 
 
 class VisaRequirementResponse(BaseModel):

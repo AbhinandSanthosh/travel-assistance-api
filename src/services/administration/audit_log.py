@@ -58,10 +58,12 @@ class AuditLogService:
     def get_all_audit_logs(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[AuditLog]:
         """Return all audit logs."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def get_audit_logs_by_user(
         self,

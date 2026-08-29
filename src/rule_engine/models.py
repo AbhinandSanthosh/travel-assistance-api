@@ -1,6 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
-from decimal import Decimal
+
+from src.domain.passenger import Passenger
+from src.domain.journey import Journey, TransitPoint
+from src.domain.decisions import Requirement
 
 from src.models.compliance.customs_rule import CustomsRule
 from src.models.compliance.entry_restriction import EntryRestriction
@@ -13,35 +16,32 @@ from src.models.compliance.visa_rule import VisaRule
 
 @dataclass
 class JourneyRequest:
-    """
-    Raw journey request received from the API.
-    """
+    """Rich journey request received from the API."""
 
-    nationality: str
-    destination: str
-    purpose: str
-    passport_type: str
-    origin: str | None = None
+    passenger: Passenger
+    journey: Journey
 
 
 @dataclass
 class NormalizedJourney:
-    """
-    Journey after resolving all reference data IDs.
-    """
+    """Journey after resolving all airport codes to country/airport IDs."""
 
     nationality_country_id: int
     destination_country_id: int
+    origin_country_id: int | None
     purpose_id: int
     passport_type_id: int
-    origin_country_id: int | None = None
+    travel_date: date
+    transit_points: list[TransitPoint] = field(
+        default_factory=list,
+    )
+    destination_airport_id: int | None = None
+    origin_airport_id: int | None = None
 
 
 @dataclass
 class ComplianceContext:
-    """
-    Shared context passed to every Rule Engine component.
-    """
+    """Shared context passed to every evaluator."""
 
     nationality_country_id: int
     destination_country_id: int
@@ -49,198 +49,52 @@ class ComplianceContext:
     passport_type_id: int
     travel_date: date
     origin_country_id: int | None = None
+    passenger: Passenger | None = None
+    transit_points: list[TransitPoint] = field(
+        default_factory=list,
+    )
+
+
+@dataclass
+class TransitRuleEntry:
+    """A transit rule paired with the transit point it applies to."""
+
+    transit_point: TransitPoint
+    transit_rule: TransitRule | None
 
 
 @dataclass
 class LoadedRules:
-    """
-    Collection of all rules applicable to the traveller.
-    """
+    """All applicable rules loaded for a journey."""
 
     visa_rule: VisaRule | None
     passport_rule: PassportRule | None
-    transit_rule: TransitRule | None
     health_rule: HealthRule | None
     immigration_rule: ImmigrationRule | None
     customs_rule: CustomsRule | None
     entry_restriction: EntryRestriction | None
+    transit_rules: list[TransitRuleEntry] = field(
+        default_factory=list,
+    )
 
-@dataclass
-class VisaEvaluationResult:
-    """
-    Result produced by the Visa Evaluator.
-    """
-
-    visa_required: bool
-    visa_type: str | None
-    visa_on_arrival: bool
-    evisa_available: bool
-    max_stay_days: int | None
-    multiple_entry: bool
-    remarks: str | None
-@dataclass
-class PassportEvaluationResult:
-    """
-    Result produced by the Passport Evaluator.
-    """
-
-    minimum_validity_months: int | None
-
-    blank_pages_required: int | None
-
-    machine_readable_required: bool | None
-
-    damaged_passport_allowed: bool | None
-
-    temporary_passport_allowed: bool | None
-
-    passport_issue_date_required: bool | None
-
-    remarks: str | None
-
-@dataclass
-class TransitEvaluationResult:
-    """
-    Result produced by the Transit Evaluator.
-    """
-
-    transit_visa_required: bool
-
-    airside_transit_allowed: bool
-
-    baggage_collection_required: bool
-
-    overnight_transit_allowed: bool
-
-    max_transit_hours: int | None
-
-    remarks: str | None
-@dataclass
-class VaccineRequirement:
-    """
-    Vaccine requirement associated with a health rule.
-    """
-
-    vaccine_name: str
-
-    certificate_required: bool
-
-
-@dataclass
-class HealthEvaluationResult:
-    """
-    Result produced by the Health Evaluator.
-    """
-
-    health_form_required: bool
-
-    quarantine_required: bool
-
-    quarantine_days: int | None
-
-    medical_certificate_required: bool
-
-    vaccines: list[VaccineRequirement]
-
-    remarks: str | None
-@dataclass
-class ImmigrationEvaluationResult:
-    """
-    Result produced by the Immigration Evaluator.
-    """
-
-    onward_ticket_required: bool
-
-    accommodation_proof_required: bool
-
-    proof_of_funds_required: bool
-
-    biometric_required: bool
-
-    interview_required: bool
-
-    arrival_card_required: bool
-
-    digital_arrival_card: bool
-
-    arrival_registration_required: bool
-
-    remarks: str | None
-@dataclass
-class CustomsEvaluationResult:
-    """
-    Result produced by the Customs Evaluator.
-    """
-
-    alcohol_limit: str | None
-
-    tobacco_limit: str | None
-
-    currency_limit_amount: Decimal | None
-
-    currency: str | None
-
-    currency_declaration_required: bool
-
-    medication_rules: str | None
-
-    prohibited_items: str | None
-
-    restricted_items: str | None
-
-    pet_import_rules: str | None
-
-    remarks: str | None
-@dataclass
-class EntryRestrictionEvaluationResult:
-    """
-    Result produced by the Entry Restriction Evaluator.
-    """
-
-    restriction_type: str
-
-    reason: str | None
-
-    effective_date: date
-
-    expiry_date: date | None
-
-    source: str | None
-
-    remarks: str | None
 
 @dataclass
 class RuleEngineResult:
-    """
-    Final result produced by the Rule Engine.
-    """
+    """Final result produced by the Rule Engine.
 
-    visa: VisaEvaluationResult | None
-
-    passport: PassportEvaluationResult | None = None
-
-    transit: TransitEvaluationResult | None = None
-
-    health: HealthEvaluationResult | None = None
-
-    immigration: ImmigrationEvaluationResult | None = None
-
-    customs: CustomsEvaluationResult | None = None
-
-    entry_restriction: EntryRestrictionEvaluationResult | None = None
-
-@dataclass
-class ComplianceDecision:
-    """
-    Final compliance decision returned by the Rule Engine.
+    context/loaded_rules are included alongside requirements/warnings
+    so a single engine.execute() call is enough for a caller to build
+    a full response (decision + per-domain detail + audit trail)
+    without re-running journey_analyzer/context_builder/rule_loader a
+    second time -- that duplication is exactly what produced the
+    stale, broken second pipeline in autocheck_service.py.
     """
 
-    status: str
-
-    summary: str
-
-    requirements: list[str]
-
-    warnings: list[str]
-
-    blockers: list[str]
+    requirements: list[Requirement] = field(
+        default_factory=list,
+    )
+    warnings: list[Requirement] = field(
+        default_factory=list,
+    )
+    context: ComplianceContext | None = None
+    loaded_rules: LoadedRules | None = None

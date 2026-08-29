@@ -68,10 +68,13 @@ class VisaRuleService:
     def get_all_visa_rules(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[VisaRule]:
         """Retrieve all visa rules."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_visa_rule(
         self,

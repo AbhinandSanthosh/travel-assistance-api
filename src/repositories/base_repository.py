@@ -23,8 +23,10 @@ class BaseRepository(Generic[ModelType]):
     def get_by_id(self, db: Session, obj_id: int) -> ModelType | None:
         return db.get(self.model, obj_id)
 
-    def get_all(self, db: Session) -> list[ModelType]:
-        return db.scalars(select(self.model)).all()
+    def get_all(self, db: Session, skip: int = 0, limit: int = 100) -> list[ModelType]:
+        return db.scalars(
+            select(self.model).offset(skip).limit(limit)
+        ).all()
 
     def delete(self, db: Session, obj: ModelType) -> None:
         db.delete(obj)

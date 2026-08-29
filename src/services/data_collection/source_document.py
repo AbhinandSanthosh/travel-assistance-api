@@ -81,9 +81,10 @@ class SourceDocumentService:
     def get_source_documents(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[SourceDocument]:
-
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_source_document(
         self,

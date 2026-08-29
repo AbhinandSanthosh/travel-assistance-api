@@ -61,10 +61,13 @@ class AIExtractionService:
     def get_ai_extractions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[AIExtraction]:
         """Get all AI extractions."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_ai_extraction(
         self,

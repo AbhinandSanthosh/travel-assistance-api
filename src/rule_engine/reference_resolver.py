@@ -32,6 +32,58 @@ class ReferenceResolver:
 
         return country
 
+    def get_country_by_iso2(self, iso2_code: str) -> Country:
+        """Resolve an ISO 3166-1 alpha-2 country code."""
+
+        country = (
+            self.db.query(Country)
+            .filter(
+                func.upper(Country.iso2)
+                == iso2_code.strip().upper()
+            )
+            .first()
+        )
+
+        if country is None:
+            valid_codes = sorted(
+                c.iso2
+                for c in self.db.query(Country).all()
+            )
+            raise ValueError(
+                f"Unknown country code: {iso2_code}. "
+                f"Valid ISO-2 codes: {', '.join(valid_codes)}"
+            )
+
+        return country
+
+    def get_airport(self, iata_code: str):
+        """Resolve an IATA airport code to its Airport record."""
+
+        from src.models.reference.airport import Airport
+
+        airport = (
+            self.db.query(Airport)
+            .filter(
+                func.upper(Airport.iata_code)
+                == iata_code.strip().upper()
+            )
+            .first()
+        )
+
+        if airport is None:
+            valid_codes = sorted(
+                a.iata_code
+                for a in self.db.query(Airport)
+                .filter(Airport.iata_code.isnot(None))
+                .all()
+            )
+            raise ValueError(
+                f"Unknown airport code: {iata_code}. "
+                f"Valid IATA codes: {', '.join(valid_codes)}"
+            )
+
+        return airport
+
     def get_purpose(self, purpose: str) -> Purpose:
         normalized = purpose.strip().lower()
 

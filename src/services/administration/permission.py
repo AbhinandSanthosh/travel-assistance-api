@@ -73,10 +73,12 @@ class PermissionService:
     def get_all_permissions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Permission]:
         """Retrieve all permissions."""
 
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_permission(
         self,

@@ -39,10 +39,15 @@ class BaseCrudService:
     def get_all(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Any]:
-        """Retrieve all records."""
+        """Retrieve records, paginated. Without this cap, a listing
+        endpoint on a table that grows without bound (e.g. audit_logs,
+        api_request_logs) would eventually try to load the entire
+        table into memory and serialize it in one response."""
 
-        return self.repository.get_all(db=db)
+        return self.repository.get_all(db=db, skip=skip, limit=limit)
 
     def update(
         self,

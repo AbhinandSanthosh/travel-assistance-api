@@ -106,10 +106,13 @@ class TravelAuthorizationService:
     def get_all_travel_authorizations(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[TravelAuthorization]:
         """Get all travel authorizations."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_travel_authorization(
         self,

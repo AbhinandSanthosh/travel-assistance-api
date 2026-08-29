@@ -88,10 +88,13 @@ class CityService:
     def get_all_cities(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[City]:
         """Get all cities."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_city(
         self,

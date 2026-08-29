@@ -80,10 +80,13 @@ class CustomsRuleService:
     def get_all_customs_rules(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[CustomsRule]:
         """Retrieve all customs rules."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_customs_rule(
         self,

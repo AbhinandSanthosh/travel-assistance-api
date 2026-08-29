@@ -95,10 +95,13 @@ class CountryService:
     def get_all_countries(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Country]:
         """Retrieve all countries."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
     
     def update_country(
         self,

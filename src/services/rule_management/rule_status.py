@@ -71,10 +71,13 @@ class RuleStatusService:
     def get_all_rule_statuses(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleStatus]:
         """Retrieve all rule statuses."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_rule_status(
         self,

@@ -81,10 +81,13 @@ class SourceRegistryService:
     def get_all_source_registries(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[SourceRegistry]:
         """Get all source registries."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_source_registry(
         self,

@@ -1,5 +1,4 @@
-from datetime import date
-
+from src.domain.passenger import Passenger
 from src.rule_engine.models import (
     ComplianceContext,
     NormalizedJourney,
@@ -7,15 +6,12 @@ from src.rule_engine.models import (
 
 
 class ContextBuilder:
-    """
-    Builds the shared compliance context
-    used by all evaluators.
-    """
+    """Builds the shared compliance context used by all evaluators."""
 
     def build(
         self,
         journey: NormalizedJourney,
-        travel_date: date,
+        passenger: Passenger,
     ) -> ComplianceContext:
 
         return ComplianceContext(
@@ -23,6 +19,8 @@ class ContextBuilder:
             destination_country_id=journey.destination_country_id,
             purpose_id=journey.purpose_id,
             passport_type_id=journey.passport_type_id,
-            travel_date=travel_date,
+            travel_date=journey.travel_date,
             origin_country_id=journey.origin_country_id,
+            passenger=passenger,
+            transit_points=journey.transit_points,
         )

@@ -1,244 +1,132 @@
+from datetime import datetime, timezone
+
+from src.domain.decisions import (
+    DecisionStatus,
+    JourneySummary,
+    Requirement,
+    RequirementCategory,
+    RequirementStatus,
+    RuleExecutionRecord,
+    TravelRequirementsDecision,
+)
 from src.rule_engine.models import (
-    ComplianceDecision,
+    ComplianceContext,
     RuleEngineResult,
 )
 
 
 class DecisionGenerator:
-    """
-    Generates the final compliance decision
-    from all evaluated rules.
-    """
+    """Generates the final TISCO decision from evaluated requirements."""
 
     def generate(
         self,
-        result: RuleEngineResult,
-    ) -> ComplianceDecision:
+        engine_result: RuleEngineResult,
+        context: ComplianceContext,
+        rule_version: str,
+        check_id: str,
+        execution_records: list[RuleExecutionRecord]
+        | None = None,
+        journey_origin: str = "",
+        journey_destination: str = "",
+    ) -> TravelRequirementsDecision:
 
-        requirements: list[str] = []
-        warnings: list[str] = []
-        blockers: list[str] = []
+        all_requirements = engine_result.requirements
+        all_warnings = engine_result.warnings
 
-        status = "COMPLIANT"
-        summary = (
-            "Traveller meets all evaluated compliance requirements."
+        decision = self._determine_decision(
+            all_requirements,
+        )
+        summary = self._generate_summary(decision)
+
+        transit_countries: list[str] = []
+        for tp in context.transit_points:
+            if (
+                tp.country
+                and tp.country not in transit_countries
+            ):
+                transit_countries.append(tp.country)
+
+        return TravelRequirementsDecision(
+            check_id=check_id,
+            decision=decision,
+            summary=summary,
+            requirements=all_requirements,
+            warnings=all_warnings,
+            journey=JourneySummary(
+                origin=journey_origin,
+                destination=journey_destination,
+                transit_countries=transit_countries,
+            ),
+            rule_execution_log=execution_records or [],
+            evaluated_at=datetime.now(timezone.utc),
+            rule_version=rule_version,
         )
 
-        #
-        # 1. Entry Restrictions (Highest Priority)
-        #
-        if (
-            result.entry_restriction is not None
-            and result.entry_restriction.restriction_type.upper()
-            != "NONE"
-        ):
-            blockers.append(
-                result.entry_restriction.reason
-                or "Entry to the destination country is restricted."
-            )
+    def _determine_decision(
+        self,
+        requirements: list[Requirement],
+    ) -> DecisionStatus:
 
-            return ComplianceDecision(
-                status="ENTRY_RESTRICTED",
-                summary=(
-                    "Traveller is not permitted to enter "
-                    "the destination country."
-                ),
-                requirements=requirements,
-                warnings=warnings,
-                blockers=blockers,
-            )
+        has_entry_restriction = any(
+            r.category
+            == RequirementCategory.ENTRY_RESTRICTION
+            and r.status == RequirementStatus.REQUIRED
+            for r in requirements
+        )
+        if has_entry_restriction:
+            return DecisionStatus.NOT_PERMITTED
 
-        #
-        # 2. Visa Requirements
-        #
-        if (
-            result.visa is not None
-            and result.visa.visa_required
-        ):
-            status = "ACTION_REQUIRED"
+        has_unknown = any(
+            r.status == RequirementStatus.UNKNOWN
+            for r in requirements
+        )
+        has_required = any(
+            r.status == RequirementStatus.REQUIRED
+            for r in requirements
+        )
+        has_conditional = any(
+            r.status == RequirementStatus.CONDITIONAL
+            for r in requirements
+        )
 
-            summary = (
-                "Traveller must complete one or more "
-                "requirements before travelling."
-            )
+        if has_unknown and has_required:
+            return DecisionStatus.ACTION_REQUIRED
+        if has_unknown:
+            return DecisionStatus.UNKNOWN
+        if has_required:
+            return DecisionStatus.ACTION_REQUIRED
+        if has_conditional:
+            return DecisionStatus.CONDITIONAL
+        return DecisionStatus.CLEAR
 
-            visa_type = (
-                result.visa.visa_type
-                if result.visa.visa_type
-                else "Visa"
-            )
+    def _generate_summary(
+        self,
+        decision: DecisionStatus,
+    ) -> str:
 
-            requirements.append(
-                f"Obtain {visa_type} before travelling."
-            )
-
-        #
-        # 3. Passport Requirements
-        #
-        if result.passport is not None:
-
-            if result.passport.minimum_validity_months:
-                requirements.append(
-                    "Passport must be valid for at least "
-                    f"{result.passport.minimum_validity_months} months."
-                )
-
-            if result.passport.blank_pages_required:
-                requirements.append(
-                    "Passport must contain at least "
-                    f"{result.passport.blank_pages_required} blank pages."
-                )
-
-            if result.passport.machine_readable_required:
-                requirements.append(
-                    "Passport must be machine readable."
-                )
-
-            if not result.passport.temporary_passport_allowed:
-                warnings.append(
-                    "Temporary passports are not accepted."
-                )
-
-        #
-        # 4. Health Requirements
-        #
-        if result.health is not None:
-
-            if result.health.health_form_required:
-                requirements.append(
-                    "Complete the required health declaration form."
-                )
-
-            if result.health.quarantine_required:
-                requirements.append(
-                    "Complete the required quarantine period."
-                )
-
-            if result.health.medical_certificate_required:
-                requirements.append(
-                    "Carry the required medical certificate."
-                )
-
-            for vaccine in result.health.vaccines:
-
-                if vaccine.certificate_required:
-                    requirements.append(
-                        f"Carry a valid {vaccine.vaccine_name} vaccination certificate."
-                    )
-                else:
-                    warnings.append(
-                        f"{vaccine.vaccine_name} vaccination is recommended."
-                    )
-
-        #
-        # 5. Immigration Requirements
-        #
-        if result.immigration is not None:
-
-            if result.immigration.onward_ticket_required:
-                requirements.append(
-                    "Carry proof of onward or return travel."
-                )
-
-            if result.immigration.accommodation_proof_required:
-                requirements.append(
-                    "Carry proof of accommodation."
-                )
-
-            if result.immigration.proof_of_funds_required:
-                requirements.append(
-                    "Carry proof of sufficient funds."
-                )
-
-            if result.immigration.biometric_required:
-                requirements.append(
-                    "Complete biometric verification."
-                )
-
-            if result.immigration.interview_required:
-                requirements.append(
-                    "Attend the required immigration interview."
-                )
-
-            if result.immigration.arrival_card_required:
-                requirements.append(
-                    "Complete the arrival card."
-                )
-
-            if result.immigration.digital_arrival_card:
-                requirements.append(
-                    "Complete the digital arrival card."
-                )
-
-            if result.immigration.arrival_registration_required:
-                requirements.append(
-                    "Complete the required arrival registration."
-                )
-
-        #
-        # 6. Transit Requirements
-        #
-        if result.transit is not None:
-
-            if result.transit.transit_visa_required:
-                requirements.append(
-                    "Obtain the required transit visa."
-                )
-
-            if not result.transit.airside_transit_allowed:
-                warnings.append(
-                    "Airside transit is not permitted."
-                )
-
-            if result.transit.baggage_collection_required:
-                requirements.append(
-                    "Collect and re-check baggage during transit."
-                )
-
-            if not result.transit.overnight_transit_allowed:
-                warnings.append(
-                    "Overnight transit is not permitted."
-                )
-
-        #
-        # 7. Customs Requirements
-        #
-        if result.customs is not None:
-
-            if result.customs.currency_declaration_required:
-                requirements.append(
-                    "Declare currency exceeding the permitted limit."
-                )
-
-            if result.customs.medication_rules:
-                warnings.append(
-                    "Ensure prescription medicines comply with destination regulations."
-                )
-
-            if result.customs.pet_import_rules:
-                warnings.append(
-                    "Verify pet import requirements before travelling."
-                )
-
-        #
-        # Final Decision
-        #
-        if requirements:
-            status = "ACTION_REQUIRED"
-            summary = (
-                "Traveller must complete one or more "
-                "requirements before travelling."
-            )
-        else:
-            status = "COMPLIANT"
-            summary = (
-                "Traveller meets all evaluated compliance requirements."
-            )
-
-        return ComplianceDecision(
-            status=status,
-            summary=summary,
-            requirements=requirements,
-            warnings=warnings,
-            blockers=blockers,
+        summaries = {
+            DecisionStatus.CLEAR: (
+                "Passenger meets all evaluated "
+                "travel requirements."
+            ),
+            DecisionStatus.ACTION_REQUIRED: (
+                "One or more travel requirements must be "
+                "fulfilled before departure."
+            ),
+            DecisionStatus.NOT_PERMITTED: (
+                "Travel is not permitted to the "
+                "destination country."
+            ),
+            DecisionStatus.CONDITIONAL: (
+                "Travel may be possible subject "
+                "to conditions being met."
+            ),
+            DecisionStatus.UNKNOWN: (
+                "Insufficient regulatory data to fully "
+                "evaluate travel requirements."
+            ),
+        }
+        return summaries.get(
+            decision,
+            "Travel requirements evaluation complete.",
         )

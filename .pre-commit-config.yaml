@@ -16,10 +16,7 @@ repos:
       - id: ruff
         args: [--fix]
 
-  # Run bandit from the project's own venv (via `local`) rather than
-  # bandit's own pre-commit mirror repo, so it always uses the version
-  # pinned in requirements.txt and picks up the [tool.bandit] config
-  # (exclude_dirs) in pyproject.toml automatically.
+  
   - repo: local
     hooks:
       - id: bandit

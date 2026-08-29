@@ -65,10 +65,13 @@ class RegionService:
     def get_all_regions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Region]:
         """Get all regions."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_region(
         self,

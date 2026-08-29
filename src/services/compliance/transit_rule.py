@@ -76,10 +76,13 @@ class TransitRuleService:
     def get_all_transit_rules(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[TransitRule]:
         """Retrieve all transit rules."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_transit_rule(
         self,

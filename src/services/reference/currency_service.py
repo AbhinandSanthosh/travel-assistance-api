@@ -75,10 +75,13 @@ class CurrencyService:
     def get_all_currencies(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[Currency]:
         """Get all currencies."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_currency(
         self,

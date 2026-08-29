@@ -60,10 +60,12 @@ class APIRequestLogService:
     def get_all_api_request_logs(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[APIRequestLog]:
         """Return all API request logs."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def get_api_request_logs_by_client(
         self,

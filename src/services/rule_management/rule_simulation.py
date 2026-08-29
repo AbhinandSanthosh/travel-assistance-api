@@ -59,10 +59,12 @@ class RuleSimulationService:
     def get_all_rule_simulations(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleSimulation]:
         """Return all rule simulations."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def get_rule_simulations_by_rule(
         self,

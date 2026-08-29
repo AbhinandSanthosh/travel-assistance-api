@@ -65,10 +65,12 @@ class RuleApprovalService:
     def get_all_rule_approvals(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleApproval]:
         """Return all rule approvals."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def get_rule_approvals_by_rule(
         self,

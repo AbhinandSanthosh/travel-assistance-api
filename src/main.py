@@ -118,6 +118,10 @@ from src.api.compliance.compliance_check import (
 from src.api.compliance.rule_execution_log import (
     router as rule_execution_log_router,
 )
+from src.api.v1.travel_requirements import router as travel_requirements_v1_router
+from src.api.v1.visa import router as visa_v1_router
+from src.api.v1.passport import router as passport_v1_router
+from src.api.v1.transit import router as transit_v1_router
 from src.api.compliance.autocheck import (
     router as autocheck_router,
 )
@@ -255,6 +259,10 @@ app.include_router(rule_approval_router, dependencies=_admin_auth)
 app.include_router(rule_simulation_router, dependencies=_admin_auth)
 
 
+app.include_router(travel_requirements_v1_router)
+app.include_router(visa_v1_router)
+app.include_router(passport_v1_router)
+app.include_router(transit_v1_router)
 app.include_router(autocheck_router)
 
 

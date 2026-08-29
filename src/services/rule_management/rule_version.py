@@ -72,10 +72,13 @@ class RuleVersionService:
     def get_all_rule_versions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleVersion]:
         """Retrieve all rule versions."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_rule_version(
         self,

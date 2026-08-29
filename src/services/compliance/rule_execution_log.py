@@ -63,10 +63,13 @@ class RuleExecutionLogService:
     def get_rule_execution_logs(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleExecutionLog]:
         """Get all rule execution logs."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_rule_execution_log(
         self,

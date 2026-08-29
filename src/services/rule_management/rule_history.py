@@ -40,10 +40,13 @@ class RuleHistoryService:
     def get_all_rule_history(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RuleHistory]:
         """Retrieve all rule history records."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def get_rule_history_by_rule(
         self,

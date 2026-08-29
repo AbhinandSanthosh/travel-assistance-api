@@ -120,10 +120,12 @@ class RolePermissionService:
     def get_all_role_permissions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[RolePermission]:
         """Retrieve all role-permission mappings."""
 
-        return self.base_crud.get_all(db)
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_role_permission(
         self,

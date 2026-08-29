@@ -6,6 +6,7 @@ import time
 from dataclasses import asdict
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from enum import Enum
 from typing import Any
 
 import redis
@@ -14,6 +15,15 @@ from sqlalchemy.orm import Session
 from src.core.api_key import hash_api_key
 from src.core.alerting import maybe_alert
 from src.core.request_id import get_request_id
+from src.domain.decisions import (
+    DecisionStatus,
+    Requirement,
+    RequirementCategory,
+    RequirementStatus,
+    RuleExecutionRecord,
+)
+from src.domain.journey import Journey, JourneySegment, TransitPoint
+from src.domain.passenger import ExistingVisa, Passenger, PassportInfo
 from src.enums.decision import Decision
 from src.enums.http_method import HTTPMethod
 from src.exceptions.base import AppException
@@ -62,44 +72,36 @@ from src.services.compliance.rule_execution_log import (
 
 logger = logging.getLogger(__name__)
 
-# Maps the DecisionGenerator's free-text status onto the Decision enum
-# stored on ComplianceCheck.decision.
+
 _STATUS_TO_DECISION = {
-    "COMPLIANT": Decision.ALLOWED,
-    "ACTION_REQUIRED": Decision.CONDITIONAL,
-    "ENTRY_RESTRICTED": Decision.NOT_ALLOWED,
+    # DecisionStatus (5 values) -> the DB's Decision enum (3 values).
+    # UNKNOWN deliberately maps to CONDITIONAL, never ALLOWED --
+    # missing regulatory data must never present as "you're clear."
+    DecisionStatus.CLEAR: Decision.ALLOWED,
+    DecisionStatus.ACTION_REQUIRED: Decision.CONDITIONAL,
+    DecisionStatus.CONDITIONAL: Decision.CONDITIONAL,
+    DecisionStatus.NOT_PERMITTED: Decision.NOT_ALLOWED,
+    DecisionStatus.UNKNOWN: Decision.CONDITIONAL,
 }
 
 
 def _json_safe(value: Any) -> Any:
-    """Make dataclass output (Decimal, date) safe for a JSONB column."""
+    """Make dataclass output (Decimal, date, Enum) safe for a JSONB column."""
 
     def default(obj: Any) -> Any:
         if isinstance(obj, Decimal):
             return float(obj)
-        if isinstance(obj, date):
+        if isinstance(obj, (date, datetime)):
             return obj.isoformat()
+        if isinstance(obj, Enum):
+            return obj.value
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
     return json.loads(json.dumps(value, default=default))
 
 
 class AutoCheckService:
-    """
-    Orchestrates the full /autocheck request pipeline:
-
-        1. API Key Validation
-        2. Client Status Check
-        3. IP Whitelist Check
-        4. Rate Limiting (Redis)
-        5. Request Logging
-        6. Rule Engine (Journey Analyzer -> ... -> Decision Generator)
-        7. Response
-
-    This is the "Compliance Check Service" component from the project
-    plan; the /autocheck endpoint itself stays a thin controller that
-    just calls .run().
-    """
+   
 
     def __init__(
         self,
@@ -301,11 +303,12 @@ class AutoCheckService:
             return
 
         request_body = {
-            "nationality": payload.nationality,
-            "origin": payload.origin,
-            "destination": payload.destination,
-            "purpose": payload.purpose,
-            "passport_type": payload.passport_type,
+            "nationality": payload.passenger.nationality,
+            "passport_type": payload.passenger.passport.type,
+            "origin": payload.journey.origin,
+            "destination": payload.journey.destination,
+            "purpose": payload.journey.purpose,
+            "travel_date": payload.journey.travel_date.isoformat(),
         }
 
         try:
@@ -394,73 +397,116 @@ class AutoCheckService:
 
         stage_started_at = time.perf_counter()
 
-        # --- Journey Analyzer / Context Builder / Rule Loader ---
+        # --- Build the domain request from the API payload ---
+        passport_in = payload.passenger.passport
+        passenger = Passenger(
+            nationality=payload.passenger.nationality,
+            passport=PassportInfo(
+                issuing_country=passport_in.issuing_country,
+                type=passport_in.type,
+                valid_until=passport_in.valid_until,
+                valid_from=passport_in.valid_from,
+                blank_pages=passport_in.blank_pages,
+            ),
+            country_of_residence=payload.passenger.country_of_residence,
+            existing_visas=[
+                ExistingVisa(
+                    type=v.type,
+                    issuing_country=v.issuing_country,
+                    valid_from=v.valid_from,
+                    valid_until=v.valid_until,
+                    entries=v.entries,
+                )
+                for v in payload.passenger.existing_visas
+            ],
+            passenger_type=payload.passenger.passenger_type,
+            special_status=payload.passenger.special_status,
+        )
+
+        journey_in = payload.journey
+        journey = Journey(
+            origin=journey_in.origin,
+            destination=journey_in.destination,
+            travel_date=journey_in.travel_date,
+            purpose=journey_in.purpose,
+            return_date=journey_in.return_date,
+            segments=[
+                JourneySegment(
+                    departure_airport=s.departure_airport,
+                    arrival_airport=s.arrival_airport,
+                    airline=s.airline,
+                    flight_number=s.flight_number,
+                    departure_datetime=s.departure_datetime,
+                )
+                for s in journey_in.segments
+            ],
+            transit_points=[
+                TransitPoint(
+                    airport=tp.airport,
+                    duration_minutes=tp.duration_minutes,
+                    requires_immigration=tp.requires_immigration,
+                    separate_ticket=tp.separate_ticket,
+                )
+                for tp in journey_in.transit_points
+            ],
+        )
+
+        # --- Single pipeline entry point: journey analysis, context,
+        # rule loading, all 7 evaluators, run inside engine.execute() ---
         try:
-            journey = engine.journey_analyzer.analyze(
-                JourneyRequest(
-                    nationality=payload.nationality,
-                    destination=payload.destination,
-                    purpose=payload.purpose,
-                    passport_type=payload.passport_type,
-                    origin=payload.origin,
-                ),
+            engine_result = engine.execute(
+                JourneyRequest(passenger=passenger, journey=journey),
             )
         except ValueError as exc:
             raise UnknownReferenceDataError(str(exc)) from exc
 
-        context = engine.context_builder.build(
-            journey=journey,
-            travel_date=date.today(),
-        )
-
-        loaded_rules = engine.rule_loader.load(context)
+        context = engine_result.context
+        loaded_rules = engine_result.loaded_rules
 
         rule_rows_by_domain = {
             "visa": loaded_rules.visa_rule,
             "passport": loaded_rules.passport_rule,
-            "transit": loaded_rules.transit_rule,
             "health": loaded_rules.health_rule,
             "immigration": loaded_rules.immigration_rule,
             "customs": loaded_rules.customs_rule,
             "entry_restriction": loaded_rules.entry_restriction,
         }
+        transit_rule_rows = [
+            entry.transit_rule
+            for entry in loaded_rules.transit_rules
+            if entry.transit_rule is not None
+        ]
 
-        if all(row is None for row in rule_rows_by_domain.values()):
+        if all(row is None for row in rule_rows_by_domain.values()) and not transit_rule_rows:
             raise NoApplicableRulesError(
-                payload.nationality,
-                payload.destination,
+                payload.passenger.nationality,
+                payload.journey.destination,
             )
-
-        # --- 7 Evaluators ---
-        rule_engine_result = RuleEngineResult(
-            visa=engine.visa_evaluator.evaluate(loaded_rules),
-            passport=engine.passport_evaluator.evaluate(loaded_rules),
-            transit=engine.transit_evaluator.evaluate(loaded_rules),
-            health=engine.health_evaluator.evaluate(loaded_rules),
-            immigration=engine.immigration_evaluator.evaluate(loaded_rules),
-            customs=engine.customs_evaluator.evaluate(loaded_rules),
-            entry_restriction=engine.entry_restriction_evaluator.evaluate(
-                loaded_rules,
-            ),
-        )
-
-        # --- Decision Generator ---
-        decision = engine.decision_generator.generate(rule_engine_result)
 
         stage_elapsed_ms = max(
             1,
             round((time.perf_counter() - stage_started_at) * 1000),
         )
 
-        # --- Save Rule Execution Logs ---
+        # --- Save Rule Execution Logs + build provenance records ---
         # Note: rule_execution_logs.rule_id is a required FK to rules.id,
         # so we can only log a row for a domain where a stored rule was
         # actually found. A "no rule configured" domain has nothing to
         # point the FK at, so it's simply not logged here.
-        for domain, rule_row in rule_rows_by_domain.items():
-            if rule_row is None:
-                continue
+        execution_records: list[RuleExecutionRecord] = []
 
+        def _log_match(domain: str, rule_row) -> None:
+            reason = f"{domain} rule matched for this traveller."
+            execution_records.append(
+                RuleExecutionRecord(
+                    rule_id=str(rule_row.rule_id),
+                    rule_code=getattr(rule_row, "rule_code", "") or "",
+                    domain=domain,
+                    matched=True,
+                    execution_time_ms=stage_elapsed_ms,
+                    reason=reason,
+                ),
+            )
             self.rule_execution_log_service.create_rule_execution_log(
                 db,
                 RuleExecutionLogCreate(
@@ -469,9 +515,19 @@ class AutoCheckService:
                     matched=True,
                     skipped=False,
                     execution_time_ms=stage_elapsed_ms,
-                    reason=f"{domain} rule matched for this traveller.",
+                    reason=reason,
                 ),
             )
+
+        for domain, rule_row in rule_rows_by_domain.items():
+            if rule_row is None:
+                continue
+            _log_match(domain, rule_row)
+
+        for entry in loaded_rules.transit_rules:
+            if entry.transit_rule is None:
+                continue
+            _log_match(f"transit ({entry.transit_point.country})", entry.transit_rule)
 
         # --- Resolve a rule_version for the compliance check ---
         # ComplianceCheck stores a single rule_version_id, but rules are
@@ -483,7 +539,7 @@ class AutoCheckService:
         # checks need to reference every domain's version individually.
         rule_version = None
 
-        for rule_row in rule_rows_by_domain.values():
+        for rule_row in list(rule_rows_by_domain.values()) + transit_rule_rows:
             if rule_row is None:
                 continue
 
@@ -499,51 +555,70 @@ class AutoCheckService:
 
         if rule_version is None:
             raise NoApplicableRulesError(
-                payload.nationality,
-                payload.destination,
+                payload.passenger.nationality,
+                payload.journey.destination,
             )
 
+        check_id = f"chk_{request_id}"
+
+        # --- Decision Generator ---
+        decision = engine.decision_generator.generate(
+            engine_result=RuleEngineResult(
+                requirements=engine_result.requirements,
+                warnings=engine_result.warnings,
+            ),
+            context=context,
+            rule_version=rule_version.version_number,
+            check_id=check_id,
+            execution_records=execution_records,
+            journey_origin=payload.journey.origin,
+            journey_destination=payload.journey.destination,
+        )
+
+        def _fmt(req: Requirement) -> str:
+            return f"{req.title}: {req.details}" if req.details else req.title
+
+        blockers = [
+            _fmt(req)
+            for req in decision.requirements
+            if req.category == RequirementCategory.ENTRY_RESTRICTION
+            and req.status == RequirementStatus.REQUIRED
+        ]
+
         decision_enum = _STATUS_TO_DECISION.get(
-            decision.status,
+            decision.decision,
             Decision.CONDITIONAL,
         )
 
         decision_reasons = (
-            [{"type": "requirement", "text": text} for text in decision.requirements]
-            + [{"type": "warning", "text": text} for text in decision.warnings]
-            + [{"type": "blocker", "text": text} for text in decision.blockers]
+            [{"type": "requirement", "text": _fmt(r)} for r in decision.requirements]
+            + [{"type": "warning", "text": _fmt(r)} for r in decision.warnings]
+            + [{"type": "blocker", "text": b} for b in blockers]
         )
 
         response_json = _json_safe(
             {
                 "request": {
-                    "nationality": payload.nationality,
-                    "origin": payload.origin,
-                    "destination": payload.destination,
-                    "purpose": payload.purpose,
-                    "passport_type": payload.passport_type,
+                    "nationality": payload.passenger.nationality,
+                    "passport_type": payload.passenger.passport.type,
+                    "origin": payload.journey.origin,
+                    "destination": payload.journey.destination,
+                    "purpose": payload.journey.purpose,
+                    "travel_date": payload.journey.travel_date.isoformat(),
                 },
                 "decision": asdict(decision),
-                "requirements": {
-                    "visa": asdict(rule_engine_result.visa) if rule_engine_result.visa else None,
-                    "passport": asdict(rule_engine_result.passport) if rule_engine_result.passport else None,
-                    "transit": asdict(rule_engine_result.transit) if rule_engine_result.transit else None,
-                    "health": asdict(rule_engine_result.health) if rule_engine_result.health else None,
-                    "immigration": asdict(rule_engine_result.immigration) if rule_engine_result.immigration else None,
-                    "customs": asdict(rule_engine_result.customs) if rule_engine_result.customs else None,
-                    "entry_restriction": asdict(rule_engine_result.entry_restriction) if rule_engine_result.entry_restriction else None,
-                },
             }
         )
 
         input_hash = hashlib.sha256(
             json.dumps(
                 {
-                    "nationality": payload.nationality,
-                    "origin": payload.origin,
-                    "destination": payload.destination,
-                    "purpose": payload.purpose,
-                    "passport_type": payload.passport_type,
+                    "nationality": payload.passenger.nationality,
+                    "passport_type": payload.passenger.passport.type,
+                    "origin": payload.journey.origin,
+                    "destination": payload.journey.destination,
+                    "purpose": payload.journey.purpose,
+                    "travel_date": payload.journey.travel_date.isoformat(),
                 },
                 sort_keys=True,
             ).encode("utf-8")
@@ -565,49 +640,63 @@ class AutoCheckService:
             )
         )
 
-        # --- 7. Response ---
+        # The flat per-domain fields below are a "primary detail card"
+        # view for backward-compatible simple consumers -- they come
+        # straight off the matched DB rows, not off the generic
+        # requirements[] list. For a journey with multiple transit
+        # points, only the FIRST transit point's rule is surfaced here;
+        # the complete picture (every transit point independently) is
+        # always in decision.requirements/warnings above.
+        primary_transit_rule = transit_rule_rows[0] if transit_rule_rows else None
+
         return AutoCheckResponse(
             compliance_check_id=compliance_check.id,
             request_id=compliance_check.request_id,
-            nationality=payload.nationality,
-            origin=payload.origin,
-            destination=payload.destination,
-            purpose=payload.purpose,
-            passport_type=payload.passport_type,
-            decision=ComplianceDecisionResponse.model_validate(decision),
+            nationality=payload.passenger.nationality,
+            origin=payload.journey.origin,
+            destination=payload.journey.destination,
+            purpose=payload.journey.purpose,
+            passport_type=payload.passenger.passport.type,
+            decision=ComplianceDecisionResponse(
+                status=decision.decision.value,
+                summary=decision.summary,
+                requirements=[_fmt(r) for r in decision.requirements],
+                warnings=[_fmt(r) for r in decision.warnings],
+                blockers=blockers,
+            ),
             visa=(
-                VisaRequirementResponse.model_validate(rule_engine_result.visa)
-                if rule_engine_result.visa
+                VisaRequirementResponse.model_validate(loaded_rules.visa_rule)
+                if loaded_rules.visa_rule
                 else None
             ),
             passport=(
-                PassportRequirementResponse.model_validate(rule_engine_result.passport)
-                if rule_engine_result.passport
+                PassportRequirementResponse.model_validate(loaded_rules.passport_rule)
+                if loaded_rules.passport_rule
                 else None
             ),
             transit=(
-                TransitRequirementResponse.model_validate(rule_engine_result.transit)
-                if rule_engine_result.transit
+                TransitRequirementResponse.model_validate(primary_transit_rule)
+                if primary_transit_rule
                 else None
             ),
             health=(
-                HealthRequirementResponse.model_validate(rule_engine_result.health)
-                if rule_engine_result.health
+                HealthRequirementResponse.model_validate(loaded_rules.health_rule)
+                if loaded_rules.health_rule
                 else None
             ),
             immigration=(
-                ImmigrationRequirementResponse.model_validate(rule_engine_result.immigration)
-                if rule_engine_result.immigration
+                ImmigrationRequirementResponse.model_validate(loaded_rules.immigration_rule)
+                if loaded_rules.immigration_rule
                 else None
             ),
             customs=(
-                CustomsRequirementResponse.model_validate(rule_engine_result.customs)
-                if rule_engine_result.customs
+                CustomsRequirementResponse.model_validate(loaded_rules.customs_rule)
+                if loaded_rules.customs_rule
                 else None
             ),
             entry_restriction=(
-                EntryRestrictionResponse.model_validate(rule_engine_result.entry_restriction)
-                if rule_engine_result.entry_restriction
+                EntryRestrictionResponse.model_validate(loaded_rules.entry_restriction)
+                if loaded_rules.entry_restriction
                 else None
             ),
         )

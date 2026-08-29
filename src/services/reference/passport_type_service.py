@@ -82,10 +82,13 @@ class PassportTypeService:
     def get_all_passport_types(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[PassportType]:
         """Get all passport types."""
 
-        return self.base_crud.get_all(db)
+
+        return self.base_crud.get_all(db, skip, limit)
 
     def update_passport_type(
         self,

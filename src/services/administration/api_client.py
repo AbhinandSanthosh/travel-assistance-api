@@ -68,10 +68,12 @@ class APIClientService:
     def get_all_api_clients(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[APIClient]:
         """Return all API clients."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def update_api_client(
         self,

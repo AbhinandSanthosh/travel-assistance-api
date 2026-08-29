@@ -80,10 +80,13 @@ class ImmigrationRuleService:
     def get_all_immigration_rules(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[ImmigrationRule]:
         """Retrieve all immigration rules."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_immigration_rule(
         self,

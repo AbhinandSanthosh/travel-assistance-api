@@ -68,10 +68,12 @@ class ClientIPWhitelistService:
     def get_all_client_ip_whitelists(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[ClientIPWhitelist]:
         """Return all client IP whitelist entries."""
 
-        return self.base_crud.get_all(db=db)
+        return self.base_crud.get_all(db=db, skip=skip, limit=limit)
 
     def get_client_whitelist_entries(
         self,

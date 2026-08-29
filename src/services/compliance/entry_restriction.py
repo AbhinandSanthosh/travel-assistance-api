@@ -80,10 +80,13 @@ class EntryRestrictionService:
     def get_all_entry_restrictions(
         self,
         db: Session,
+        skip: int = 0,
+        limit: int = 100,
     ) -> list[EntryRestriction]:
         """Retrieve all entry restrictions."""
 
-        return self.crud.get_all(db)
+
+        return self.crud.get_all(db, skip, limit)
 
     def update_entry_restriction(
         self,
