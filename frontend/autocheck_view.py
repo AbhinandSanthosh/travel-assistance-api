@@ -42,9 +42,11 @@ PASSENGER_TYPES = ["ADULT", "CHILD", "INFANT", "CREW"]
 SPECIAL_STATUSES = ["DIPLOMAT", "REFUGEE", "STATELESS", "SEAMAN", "MILITARY"]
 
 STATUS_DISPLAY = {
-    "COMPLIANT": ("Compliant", "success", "\u2713"),
+    "CLEAR": ("Compliant", "success", "\u2713"),
     "ACTION_REQUIRED": ("Action Required", "warning", "!"),
-    "ENTRY_RESTRICTED": ("Entry Restricted", "error", "\u2715"),
+    "NOT_PERMITTED": ("Entry Restricted", "error", "\u2715"),
+    "CONDITIONAL": ("Conditional", "warning", "!"),
+    "UNKNOWN": ("Unable To Determine", "info", "?"),
 }
 
 DOMAIN_TABS = [

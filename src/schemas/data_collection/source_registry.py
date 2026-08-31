@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from src.enums.source_type import SourceType
 from src.enums.update_frequency import UpdateFrequency

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.enums.validation_status import (
     ValidationStatus,

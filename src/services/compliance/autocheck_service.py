@@ -399,10 +399,15 @@ class AutoCheckService:
 
         # --- Build the domain request from the API payload ---
         passport_in = payload.passenger.passport
+        # issuing_country is optional on the request -- a passport issued
+        # by the traveller's own nationality country is the common case,
+        # so fall back to it when the field is left blank (matches the
+        # help text shown on the autocheck form).
+        issuing_country = passport_in.issuing_country or payload.passenger.nationality
         passenger = Passenger(
             nationality=payload.passenger.nationality,
             passport=PassportInfo(
-                issuing_country=passport_in.issuing_country,
+                issuing_country=issuing_country,
                 type=passport_in.type,
                 valid_until=passport_in.valid_until,
                 valid_from=passport_in.valid_from,

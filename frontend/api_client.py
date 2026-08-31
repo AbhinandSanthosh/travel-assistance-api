@@ -69,6 +69,22 @@ class APIClient:
         )
         return _handle(resp)
 
+    def logout(self, refresh_token: str | None = None) -> dict:
+        """POST /api/v1/auth/logout using the current bearer token.
+
+        Revokes the access token server-side (via its jti) so it can't
+        be reused for the rest of its natural lifetime. Pass the
+        refresh token too, if one was stored at login, so it's revoked
+        along with the access token.
+        """
+        resp = requests.post(
+            self._url("/api/v1/auth/logout"),
+            json={"refreshToken": refresh_token} if refresh_token else {},
+            headers=self._headers(),
+            timeout=self.timeout,
+        )
+        return _handle(resp)
+
     # ------------------------------------------------------------------
     # Generic CRUD (admin, bearer-token protected)
     # ------------------------------------------------------------------

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import ConfigDict, EmailStr, Field, field_validator
 
 from src.core.security import password_policy_errors
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

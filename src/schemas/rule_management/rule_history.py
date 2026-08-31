@@ -1,6 +1,6 @@
 
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.enums.change_type import ChangeType
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

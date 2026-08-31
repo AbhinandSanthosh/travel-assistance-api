@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.enums.simulation_status import SimulationStatus
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

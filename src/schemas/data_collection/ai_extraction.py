@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.enums.extraction_status import (
     ExtractionStatus,

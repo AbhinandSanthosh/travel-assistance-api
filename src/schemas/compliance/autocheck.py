@@ -8,8 +8,12 @@ from src.schemas.common import StrictInputSchema
 class PassportInfoRequest(StrictInputSchema):
     """Passport the passenger will travel on."""
 
-    issuing_country: str = Field(
-        ..., description="ISO 3166-1 alpha-2 code, e.g. 'IN'.",
+    issuing_country: str | None = Field(
+        default=None,
+        description=(
+            "ISO 3166-1 alpha-2 code, e.g. 'IN'. Optional -- if omitted, "
+            "falls back to the passenger's nationality."
+        ),
     )
     type: str = Field(
         ...,

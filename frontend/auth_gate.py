@@ -18,6 +18,7 @@ from api_client import APIClient, APIError
 
 SESSION_ROLE = "auth_role"                 # "admin" | "client" | None
 SESSION_ADMIN_TOKEN = "auth_admin_token"  # nosec B105 -- dict key name, not a credential
+SESSION_ADMIN_REFRESH_TOKEN = "auth_admin_refresh_token"  # nosec B105 -- dict key name, not a credential
 SESSION_ADMIN_USER = "auth_admin_user"
 SESSION_CLIENT_API_KEY = "auth_client_api_key"
 
@@ -34,6 +35,7 @@ def _reset_session():
     for key in (
         SESSION_ROLE,
         SESSION_ADMIN_TOKEN,
+        SESSION_ADMIN_REFRESH_TOKEN,
         SESSION_ADMIN_USER,
         SESSION_CLIENT_API_KEY,
         SESSION_CLIENT_PORTAL_TOKEN,
@@ -56,7 +58,7 @@ def is_authenticated() -> bool:
     return False
 
 
-def render_sidebar_identity():
+def render_sidebar_identity(base_url: str | None = None):
     """Shows who's logged in + a logout button. Call from the sidebar
     once authenticated."""
     role = st.session_state.get(SESSION_ROLE)
@@ -75,6 +77,17 @@ def render_sidebar_identity():
         st.sidebar.markdown(f"`{masked}`")
 
     if st.sidebar.button("🚪 Log out", use_container_width=True):
+        if role == "admin":
+            token = st.session_state.get(SESSION_ADMIN_TOKEN)
+            refresh_token = st.session_state.get(SESSION_ADMIN_REFRESH_TOKEN)
+            if token and base_url:
+                try:
+                    APIClient(base_url, token=token).logout(refresh_token)
+                except Exception:
+                    # The token stays valid server-side until it expires
+                    # naturally, but the local session is cleared either
+                    # way below -- don't block logout on this call.
+                    pass
         _reset_session()
         st.rerun()
 
@@ -121,6 +134,7 @@ def _render_admin_login(base_url: str):
                 result = client.login(username, password)
             token = result["accessToken"]
             st.session_state[SESSION_ADMIN_TOKEN] = token
+            st.session_state[SESSION_ADMIN_REFRESH_TOKEN] = result.get("refreshToken")
 
             authed_client = APIClient(base_url, token=token)
             try:
@@ -219,7 +233,6 @@ def _render_client_portal(base_url: str):
         _render_client_portal_dashboard(base_url, portal_token)
         return
 
-    view = st.session_state.get(SESSION_CLIENT_PORTAL_VIEW, "login")
     tab_login, tab_signup = st.tabs(["Log in", "Create account"])
 
     with tab_login:

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.enums.approval_status import ApprovalStatus
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

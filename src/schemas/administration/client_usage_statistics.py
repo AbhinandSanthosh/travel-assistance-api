@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import ConfigDict
 
 from src.schemas.common import BaseResponseSchema, StrictInputSchema
 

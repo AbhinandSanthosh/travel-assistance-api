@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import ConfigDict, EmailStr
 
 from src.enums.subscription_plan import SubscriptionPlan
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

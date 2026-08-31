@@ -91,6 +91,47 @@ RELATIONS = {
         "endpoint": "/rule-statuses",
         "label_field": "status_name",
     },
+    "rule_id": {
+        "endpoint": "/rules",
+        "label_field": "rule_code",
+    },
+    "health_rule_id": {
+        "endpoint": "/health-rules",
+        "label_field": "remarks",
+    },
+    "new_version_id": {
+        "endpoint": "/rule-versions",
+        "label_field": "version_number",
+    },
+    "previous_version_id": {
+        "endpoint": "/rule-versions",
+        "label_field": "version_number",
+    },
+
+    # Data Collection
+    "source_id": {
+        "endpoint": "/source-registries",
+        "label_field": "authority_name",
+    },
+    "document_id": {
+        "endpoint": "/source-documents",
+        "label_field": "document_name",
+    },
+
+    # Administration / people (reviewer, validator, and generic user FKs
+    # all point at the same Users table)
+    "reviewer_id": {
+        "endpoint": "/users",
+        "label_field": "full_name",
+    },
+    "validator_id": {
+        "endpoint": "/users",
+        "label_field": "full_name",
+    },
+    "user_id": {
+        "endpoint": "/users",
+        "label_field": "full_name",
+    },
 }
 
 
@@ -179,6 +220,12 @@ def _relation_options(field_name, current_value=None, required=True):
                 "permission_id",
                 "client_id",
                 "status_id",
+                "rule_id",
+                "health_rule_id",
+                "version_id",
+                "source_id",
+                "document_id",
+                "user_id",
             ):
                 if record.get(possible_id) is not None:
                     record_id = record[possible_id]
@@ -273,7 +320,7 @@ client = render_gate(st.session_state.base_url)
 if client is None:
     st.stop()
 
-render_sidebar_identity()
+render_sidebar_identity(st.session_state.base_url)
 
 # --------------------------------------------------------------------------
 # Client role: hand off entirely to the traveller compliance-check view.
@@ -542,12 +589,15 @@ if "➕ Create" in tab_map:
         create_gen_key = f"create_gen__{entity_name}"
         create_gen = st.session_state.get(create_gen_key, 0)
 
+        create_exclude = set(entity.get("create_exclude_fields", []))
+        create_fields = [fld for fld in entity["fields"] if fld["name"] not in create_exclude]
+
         with st.form(key=f"create_form__{entity_name}__{create_gen}", clear_on_submit=True):
-            values = render_form_fields(entity["fields"], f"create_{create_gen}")
+            values = render_form_fields(create_fields, f"create_{create_gen}")
             submitted = st.form_submit_button("Create", type="primary")
         if submitted:
             missing = [
-                fld["name"] for fld in entity["fields"]
+                fld["name"] for fld in create_fields
                 if fld["required"] and values.get(fld["name"]) in (None, "")
             ]
             payload, invalid = clean_payload(values)
@@ -588,7 +638,10 @@ if "✏️ Update" in tab_map:
             st.caption("Loaded record — edit fields below, then Save.")
             update_key_prefix = f"update_{record['id']}"
             with st.form(key=f"update_form__{entity_name}__{record['id']}"):
-                update_fields = entity["fields"] + entity.get("extra_update_fields", [])
+                update_exclude = set(entity.get("update_exclude_fields", []))
+                update_fields = [
+                    fld for fld in entity["fields"] if fld["name"] not in update_exclude
+                ] + entity.get("extra_update_fields", [])
                 values = render_form_fields(update_fields, update_key_prefix, record=record, force_optional=True)
                 submitted = st.form_submit_button("Save changes", type="primary")
             if submitted:

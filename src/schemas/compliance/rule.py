@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from src.enums.rule_type import RuleType
 from src.schemas.common import BaseResponseSchema, StrictInputSchema

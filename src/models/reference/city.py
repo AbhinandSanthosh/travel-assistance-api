@@ -41,5 +41,5 @@ class City(BaseModel):
 
     airports: Mapped[list["Airport"]] = relationship(
         "Airport",
-        back_populates="city",
+        back_populates="city_ref",
     )

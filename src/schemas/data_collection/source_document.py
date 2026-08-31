@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
 
 from src.enums.document_type import DocumentType
 from src.schemas.common import BaseResponseSchema, StrictInputSchema
