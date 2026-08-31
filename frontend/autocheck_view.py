@@ -38,9 +38,6 @@ FALLBACK_PURPOSES = [
 ]
 FALLBACK_PASSPORT_TYPES = [("PP", "Ordinary Passport")]
 
-PASSENGER_TYPES = ["ADULT", "CHILD", "INFANT", "CREW"]
-SPECIAL_STATUSES = ["DIPLOMAT", "REFUGEE", "STATELESS", "SEAMAN", "MILITARY"]
-
 STATUS_DISPLAY = {
     "CLEAR": ("Compliant", "success", "\u2713"),
     "ACTION_REQUIRED": ("Action Required", "warning", "!"),
@@ -608,10 +605,8 @@ def render_autocheck(client):
     country_labels = [label for label, _ in reference["countries"]]
     airport_labels = [label for label, _ in reference["airports"]]
     purpose_labels = [label for _, label in reference["purposes"]]
-    passport_labels = [label for _, label in reference["passport_types"]]
 
     with st.form("autocheck_form"):
-        st.markdown("**Traveller**")
         col1, col2 = st.columns(2)
 
         with col1:
@@ -621,69 +616,21 @@ def render_autocheck(client):
                 index=None,
                 placeholder="Select nationality",
             )
-            passenger_type = st.selectbox(
-                "Passenger type",
-                PASSENGER_TYPES,
-                index=0,
-            )
-
-        with col2:
-            residence_label = st.selectbox(
-                "Country of residence",
-                country_labels,
-                index=None,
-                placeholder="Same as nationality",
-                help="Only needed if different from nationality.",
-            )
-            special_status = st.selectbox(
-                "Special status",
-                ["(none)"] + SPECIAL_STATUSES,
-                index=0,
-                help="Diplomatic, refugee, seaman, or military status can change which rules apply.",
-            )
-
-        st.markdown("**Passport**")
-        col3, col4, col5 = st.columns(3)
-
-        with col3:
-            passport_issuing_label = st.selectbox(
-                "Issuing country",
-                country_labels,
-                index=None,
-                placeholder="Same as nationality",
-                help="Leave blank if the passport was issued by the nationality country.",
-            )
-        with col4:
-            passport_label = st.selectbox(
-                "Passport type",
-                passport_labels,
-                index=None,
-                placeholder="Select passport type",
-            )
-        with col5:
-            passport_valid_until = st.date_input(
-                "Passport valid until",
-                value=None,
-                min_value=date.today(),
-            )
-
-        st.markdown("**Journey**")
-        col6, col7 = st.columns(2)
-
-        with col6:
             origin_label = st.selectbox(
                 "Departing from (airport)",
                 airport_labels,
                 index=None,
                 placeholder="Select origin airport",
             )
-            travel_date = st.date_input(
-                "Travel date",
-                value=None,
-                min_value=date.today(),
+            passport_issuing_label = st.selectbox(
+                "Passport issued by",
+                country_labels,
+                index=None,
+                placeholder="Same as nationality",
+                help="Leave blank if the passport was issued by the nationality country.",
             )
 
-        with col7:
+        with col2:
             destination_label = st.selectbox(
                 "Arriving at (airport)",
                 airport_labels,
@@ -697,38 +644,6 @@ def render_autocheck(client):
                 placeholder="Select purpose of travel",
             )
 
-        return_date = st.date_input(
-            "Return date (optional)",
-            value=None,
-            min_value=date.today(),
-        )
-
-        with st.expander("Add a transit stop (optional)"):
-            transit_label = st.selectbox(
-                "Transit airport",
-                airport_labels,
-                index=None,
-                placeholder="No transit stop",
-                key="autocheck_transit_airport",
-            )
-            tcol1, tcol2 = st.columns(2)
-            with tcol1:
-                transit_duration = st.number_input(
-                    "Layover duration (minutes)",
-                    min_value=0,
-                    value=90,
-                    step=15,
-                )
-                transit_requires_immigration = st.checkbox(
-                    "Requires clearing immigration at this stop",
-                    value=False,
-                )
-            with tcol2:
-                transit_separate_ticket = st.checkbox(
-                    "Booked on a separate ticket",
-                    value=False,
-                )
-
         submitted = st.form_submit_button("Run auto-check", type="primary")
 
     if submitted:
@@ -736,11 +651,8 @@ def render_autocheck(client):
             field_name
             for field_name, value in (
                 ("Nationality", nationality_label),
-                ("Passport type", passport_label),
-                ("Passport valid-until date", passport_valid_until),
                 ("Origin airport", origin_label),
                 ("Destination airport", destination_label),
-                ("Travel date", travel_date),
                 ("Purpose of travel", purpose_label),
             )
             if value is None
@@ -761,13 +673,25 @@ def render_autocheck(client):
         purpose_code = next(
             code for code, label in reference["purposes"] if label == purpose_label
         )
-        passport_code = next(
-            code for code, label in reference["passport_types"] if label == passport_label
+
+        # travel_date and passport.type/valid_until are still required
+        # by AutoCheckRequest (no defaults on the schema) even though
+        # they're no longer collected in this trimmed-down form.
+        # Defaulted here rather than dropped: passport type PP
+        # (ordinary -- covers the overwhelming majority of travellers),
+        # travel_date today, and a 10-year passport validity (well past
+        # the "minimum months remaining" thresholds any real
+        # PassportRule would ever set, so this default won't itself
+        # trigger a validity warning that wasn't actually about the
+        # traveller's real passport).
+        default_travel_date = date.today()
+        default_passport_valid_until = date.today().replace(
+            year=date.today().year + 10
         )
 
         passport_payload = {
-            "type": passport_code,
-            "valid_until": passport_valid_until.isoformat(),
+            "type": "PP",
+            "valid_until": default_passport_valid_until.isoformat(),
         }
         if passport_issuing_label is not None:
             passport_payload["issuing_country"] = next(
@@ -777,36 +701,14 @@ def render_autocheck(client):
         passenger_payload = {
             "nationality": nationality_iso2,
             "passport": passport_payload,
-            "passenger_type": passenger_type,
         }
-        if residence_label is not None:
-            passenger_payload["country_of_residence"] = next(
-                iso2 for label, iso2 in reference["countries"] if label == residence_label
-            )
-        if special_status != "(none)":
-            passenger_payload["special_status"] = special_status
 
         journey_payload = {
             "origin": origin_iata,
             "destination": destination_iata,
-            "travel_date": travel_date.isoformat(),
+            "travel_date": default_travel_date.isoformat(),
             "purpose": purpose_code,
         }
-        if return_date is not None:
-            journey_payload["return_date"] = return_date.isoformat()
-
-        if transit_label is not None:
-            transit_iata = next(
-                iata for label, iata in reference["airports"] if label == transit_label
-            )
-            journey_payload["transit_points"] = [
-                {
-                    "airport": transit_iata,
-                    "duration_minutes": int(transit_duration),
-                    "requires_immigration": transit_requires_immigration,
-                    "separate_ticket": transit_separate_ticket,
-                }
-            ]
 
         payload = {
             "passenger": passenger_payload,
@@ -817,12 +719,10 @@ def render_autocheck(client):
             ("Nationality", nationality_label),
             ("Origin", origin_label),
             ("Destination", destination_label),
-            ("Travel date", travel_date.isoformat()),
             ("Purpose of travel", purpose_label),
-            ("Passport type", passport_label),
         ]
-        if transit_label is not None:
-            form_context.append(("Transit via", transit_label))
+        if passport_issuing_label is not None:
+            form_context.append(("Passport issued by", passport_issuing_label))
 
         try:
             with st.spinner("Running compliance check..."):

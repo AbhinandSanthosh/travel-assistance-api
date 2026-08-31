@@ -55,6 +55,7 @@ from src.schemas.compliance.autocheck import (
     ImmigrationRequirementResponse,
     PassportRequirementResponse,
     TransitRequirementResponse,
+    VaccineRequirementResponse,
     VisaRequirementResponse,
 )
 from src.schemas.compliance.compliance_check import ComplianceCheckCreate
@@ -98,6 +99,90 @@ def _json_safe(value: Any) -> Any:
         raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
 
     return json.loads(json.dumps(value, default=default))
+
+
+# --- ORM row -> response-schema converters for the four domains where a
+# naive VisaRequirementResponse.model_validate(orm_row) (from_attributes)
+# doesn't work, because the response field is a plain string but the
+# matching ORM attribute is actually a *relationship* to another table
+# (VisaRule.visa_type -> VisaType, EntryRestriction.source ->
+# SourceRegistry, CustomsRule.currency -> Currency), or the attribute
+# name itself differs (HealthRule.health_rule_vaccines, not
+# HealthRule.vaccines; HealthRuleVaccine has no vaccine_name of its own,
+# that lives on the related Vaccine row). PassportRule, TransitRule, and
+# ImmigrationRule response fields all map 1:1 onto plain columns, so
+# those three keep using .model_validate() directly. ---
+
+
+def _visa_response(visa_rule) -> VisaRequirementResponse | None:
+    if visa_rule is None:
+        return None
+
+    return VisaRequirementResponse(
+        visa_required=visa_rule.visa_required,
+        visa_type=(visa_rule.visa_type.visa_name if visa_rule.visa_type else None),
+        visa_on_arrival=visa_rule.visa_on_arrival,
+        evisa_available=visa_rule.evisa_available,
+        max_stay_days=visa_rule.max_stay_days,
+        multiple_entry=visa_rule.multiple_entry,
+        remarks=visa_rule.remarks,
+    )
+
+
+def _health_response(health_rule) -> HealthRequirementResponse | None:
+    if health_rule is None:
+        return None
+
+    return HealthRequirementResponse(
+        health_form_required=health_rule.health_form_required,
+        quarantine_required=health_rule.quarantine_required,
+        quarantine_days=health_rule.quarantine_days,
+        medical_certificate_required=health_rule.medical_certificate_required,
+        vaccines=[
+            VaccineRequirementResponse(
+                vaccine_name=(hrv.vaccine.vaccine_name if hrv.vaccine else "Unknown vaccine"),
+                certificate_required=hrv.certificate_required,
+            )
+            for hrv in health_rule.health_rule_vaccines
+        ],
+        remarks=health_rule.remarks,
+    )
+
+
+def _customs_response(customs_rule) -> CustomsRequirementResponse | None:
+    if customs_rule is None:
+        return None
+
+    return CustomsRequirementResponse(
+        alcohol_limit=customs_rule.alcohol_limit,
+        tobacco_limit=customs_rule.tobacco_limit,
+        currency_limit_amount=customs_rule.currency_limit_amount,
+        currency=(customs_rule.currency.currency_code if customs_rule.currency else None),
+        currency_declaration_required=customs_rule.currency_declaration_required,
+        medication_rules=customs_rule.medication_rules,
+        prohibited_items=customs_rule.prohibited_items,
+        restricted_items=customs_rule.restricted_items,
+        pet_import_rules=customs_rule.pet_import_rules,
+        remarks=customs_rule.remarks,
+    )
+
+
+def _entry_restriction_response(entry_restriction) -> EntryRestrictionResponse | None:
+    if entry_restriction is None:
+        return None
+
+    return EntryRestrictionResponse(
+        restriction_type=entry_restriction.restriction_type,
+        reason=entry_restriction.reason,
+        effective_date=entry_restriction.effective_date,
+        expiry_date=entry_restriction.expiry_date,
+        source=(
+            entry_restriction.source.authority_name
+            if entry_restriction.source
+            else None
+        ),
+        remarks=entry_restriction.remarks,
+    )
 
 
 class AutoCheckService:
@@ -669,11 +754,7 @@ class AutoCheckService:
                 warnings=[_fmt(r) for r in decision.warnings],
                 blockers=blockers,
             ),
-            visa=(
-                VisaRequirementResponse.model_validate(loaded_rules.visa_rule)
-                if loaded_rules.visa_rule
-                else None
-            ),
+            visa=_visa_response(loaded_rules.visa_rule),
             passport=(
                 PassportRequirementResponse.model_validate(loaded_rules.passport_rule)
                 if loaded_rules.passport_rule
@@ -684,24 +765,12 @@ class AutoCheckService:
                 if primary_transit_rule
                 else None
             ),
-            health=(
-                HealthRequirementResponse.model_validate(loaded_rules.health_rule)
-                if loaded_rules.health_rule
-                else None
-            ),
+            health=_health_response(loaded_rules.health_rule),
             immigration=(
                 ImmigrationRequirementResponse.model_validate(loaded_rules.immigration_rule)
                 if loaded_rules.immigration_rule
                 else None
             ),
-            customs=(
-                CustomsRequirementResponse.model_validate(loaded_rules.customs_rule)
-                if loaded_rules.customs_rule
-                else None
-            ),
-            entry_restriction=(
-                EntryRestrictionResponse.model_validate(loaded_rules.entry_restriction)
-                if loaded_rules.entry_restriction
-                else None
-            ),
+            customs=_customs_response(loaded_rules.customs_rule),
+            entry_restriction=_entry_restriction_response(loaded_rules.entry_restriction),
         )
