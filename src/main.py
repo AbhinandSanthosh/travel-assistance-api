@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI
 
 from src.api.dependencies.auth import get_current_user
 from src.api.handlers import register_exception_handlers
+from src.api.reference.city import router as city_router
 from src.api.reference.country import router as country_router
 from src.config.settings import settings
 from src.api.reference.region import router as region_router
@@ -186,12 +187,13 @@ _admin_auth = [Depends(get_current_user)]
 app.include_router(auth_router)
 
 app.include_router(country_router)
+app.include_router(city_router, dependencies=_admin_auth)
 app.include_router(region_router, dependencies=_admin_auth)
 app.include_router(currency_router, dependencies=_admin_auth)
 app.include_router(passport_type_router)
 app.include_router(visa_type_router, dependencies=_admin_auth)
 app.include_router(airline_router, dependencies=_admin_auth)
-app.include_router(airport_router, dependencies=_admin_auth)
+app.include_router(airport_router)
 app.include_router(purpose_router)
 app.include_router(passenger_type_router, dependencies=_admin_auth)
 app.include_router(travel_authorization_router, dependencies=_admin_auth)

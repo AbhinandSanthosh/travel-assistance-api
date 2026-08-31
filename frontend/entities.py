@@ -196,6 +196,23 @@ ENTITIES = {
         ],
     },
 
+    "Cities": {
+        "endpoint": "/cities",
+        "category": "Reference",
+        "ops": FULL,
+        "fields": [
+            f(
+                "city_code",
+                "str",
+                True,
+                help="IATA city code, e.g. LON, NYC, TYO",
+            ),
+            f("city_name", "str", True),
+            f("country_id", "int", True),
+            f("timezone", "str"),
+        ],
+    },
+
     "Currencies": {
         "endpoint": "/currencies",
         "category": "Reference",
@@ -1036,6 +1053,7 @@ CATEGORY_ORDER = [
 
 _ACTIVE_ON_UPDATE = {
     "Countries",
+    "Cities",
     "Regions",
     "Currencies",
     "Passport Types",

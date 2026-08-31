@@ -1,33 +1,13 @@
-"""
-Auto Check view: submits a traveller's details to POST /autocheck and
-renders the compliance decision plus the full per-category travel
-requirement breakdown. Uses the same APIClient/APIError conventions as
-the rest of the console.
-"""
-
 import streamlit as st
+from datetime import date
 
 from api_client import APIError
 
-# st.dialog was renamed from st.experimental_dialog in Streamlit 1.37;
-# support either so this works across the >=1.35 range pinned in
-# requirements.txt.
 _dialog = getattr(st, "dialog", None) or st.experimental_dialog
 
 
 def _dialog_factory(title):
-    """Wraps st.dialog(title, width="large") with a fallback for older
-    Streamlit builds (pre-1.37ish) that don't accept a width kwarg, so a
-    wider popup degrades gracefully to the default size instead of
-    crashing the app.
-
-    Called once at import time and the resulting decorator reused for
-    every open/rerun -- st.dialog tracks the modal by the identity of the
-    decorated function, so recreating a fresh function object on every
-    call (as an earlier version of this file did) makes Streamlit treat
-    each open as a brand-new dialog. That's what caused clicks needing to
-    register twice and the doubled/stacked dialog you saw.
-    """
+   
     try:
         return _dialog(title, width="large")
     except TypeError:
@@ -38,7 +18,17 @@ _RESULT_DIALOG_DECORATOR = _dialog_factory("Auto Check Result")
 
 #DEFAULT_API_KEY = "demo_api_key_123456789"
 
-FALLBACK_COUNTRIES = ["India", "Poland", "Saudi Arabia"]
+FALLBACK_COUNTRIES = [
+    {"iso2": "IN", "country_name": "India", "nationality": "Indian"},
+    {"iso2": "PL", "country_name": "Poland", "nationality": "Polish"},
+    {"iso2": "SA", "country_name": "Saudi Arabia", "nationality": "Saudi Arabian"},
+]
+FALLBACK_AIRPORTS = [
+    {"iata_code": "COK", "airport_name": "Cochin International Airport", "city": "Kochi"},
+    {"iata_code": "DOH", "airport_name": "Hamad International Airport", "city": "Doha"},
+    {"iata_code": "FRA", "airport_name": "Frankfurt Airport", "city": "Frankfurt"},
+    {"iata_code": "DEL", "airport_name": "Indira Gandhi International Airport", "city": "Delhi"},
+]
 FALLBACK_PURPOSES = [
     ("TOUR", "Tourism"),
     ("BUSINESS", "Business"),
@@ -47,6 +37,9 @@ FALLBACK_PURPOSES = [
     ("MEDICAL", "Medical"),
 ]
 FALLBACK_PASSPORT_TYPES = [("PP", "Ordinary Passport")]
+
+PASSENGER_TYPES = ["ADULT", "CHILD", "INFANT", "CREW"]
+SPECIAL_STATUSES = ["DIPLOMAT", "REFUGEE", "STATELESS", "SEAMAN", "MILITARY"]
 
 STATUS_DISPLAY = {
     "COMPLIANT": ("Compliant", "success", "\u2713"),
@@ -290,29 +283,44 @@ def _load_reference_data(client):
             return None
 
     countries = _safe_list("/countries")
+    airports = _safe_list("/airports")
     purposes = _safe_list("/purposes")
     passport_types = _safe_list("/passport-types")
 
+    if not countries:
+        countries = FALLBACK_COUNTRIES
+    if not airports:
+        airports = FALLBACK_AIRPORTS
+
     reference = {
-        # Destination / origin are places, so these stay keyed by
-        # country_name (what the /autocheck API and every other
-        # country-picker in the app expects).
-        "countries": (
-            sorted(c["country_name"] for c in countries) if countries else FALLBACK_COUNTRIES
+        # /autocheck now resolves nationality/passport issuing_country/
+        # country_of_residence by ISO 3166-1 alpha-2 code, not by full
+        # country name -- these are (label, iso2) pairs so the UI can
+        # still show a human-readable name while submitting the code
+        # the API actually expects.
+        "countries": sorted(
+            ((c["country_name"], c["iso2"]) for c in countries),
+            key=lambda pair: pair[0],
         ),
         # Nationality is a property of the traveller, not a place, so
         # it's presented using countries.nationality (e.g. "Indian",
-        # "Saudi Arabian") rather than the country name. The API only
-        # resolves nationality by country_name, so we still submit
-        # country_name under the hood -- (label, value) pairs, same
-        # pattern as purposes/passport_types below.
-        "nationalities": (
-            sorted(
-                ((c["nationality"], c["country_name"]) for c in countries),
-                key=lambda pair: pair[0],
-            )
-            if countries
-            else [(name, name) for name in FALLBACK_COUNTRIES]
+        # "Saudi Arabian") -- the value submitted is still the
+        # country's iso2 code, same as issuing_country.
+        "nationalities": sorted(
+            ((c["nationality"], c["iso2"]) for c in countries),
+            key=lambda pair: pair[0],
+        ),
+        # journey.origin/destination and transit_points.airport are now
+        # IATA airport codes, not country names -- airports without an
+        # iata_code (rail/sea ports etc., if any exist in the data)
+        # can't be selected here since /autocheck can't resolve them.
+        "airports": sorted(
+            (
+                (f"{a['airport_name']} ({a['iata_code']}) \u2014 {a.get('city', '')}", a["iata_code"])
+                for a in airports
+                if a.get("iata_code")
+            ),
+            key=lambda pair: pair[0],
         ),
         "purposes": (
             [(p["purpose_code"], p["purpose_name"]) for p in purposes]
@@ -503,19 +511,7 @@ def _render_domain(key, data):
 
 
 def _render_domain_grid(result):
-    """Requirement-detail landing view: one tile per category. Picking a
-    tile switches the dialog into that category's own detail view rather
-    than expanding content inline, so each category reads like its own
-    focused screen inside the popup.
-
-    Calls st.rerun() explicitly after the state change rather than
-    relying on the implicit rerun a widget click normally triggers --
-    st.dialog's fragment-style reruns don't reliably re-evaluate the
-    branch in _render_result on the very next paint in every Streamlit
-    build, which is what caused the "needs two clicks" behaviour. The
-    render_autocheck dispatcher at the bottom of this module re-opens
-    the same dialog on that forced rerun, so it doesn't close.
-    """
+ 
     st.markdown('<div class="tac-section-title" style="margin-top:20px;">Requirement Detail</div>', unsafe_allow_html=True)
     st.markdown('<p class="tac-empty" style="margin-bottom:10px;">Select a category to view its full requirements.</p>', unsafe_allow_html=True)
 
@@ -607,44 +603,90 @@ def render_autocheck(client):
     reference = _load_reference_data(client)
 
     nationality_labels = [label for label, _ in reference["nationalities"]]
+    country_labels = [label for label, _ in reference["countries"]]
+    airport_labels = [label for label, _ in reference["airports"]]
     purpose_labels = [label for _, label in reference["purposes"]]
     passport_labels = [label for _, label in reference["passport_types"]]
 
     with st.form("autocheck_form"):
+        st.markdown("**Traveller**")
         col1, col2 = st.columns(2)
 
         with col1:
-            # Nationality and "travelling from" are grouped together
-            # here (rather than origin living in its own full-width
-            # row) since origin only makes sense in relation to the
-            # traveller's nationality.
             nationality_label = st.selectbox(
                 "Nationality",
                 nationality_labels,
                 index=None,
                 placeholder="Select nationality",
             )
-            origin_choice = st.selectbox(
-                "Travelling from (origin)",
-                reference["countries"],
-                index=None,
-                placeholder="Not specified (any origin)",
-                help=(
-                    "Only needed if the traveller is departing from a country "
-                    "other than their nationality, e.g. an Indian national "
-                    "flying to Poland via Saudi Arabia. Leaving this blank "
-                    "does NOT default to nationality -- it matches rules that "
-                    "apply regardless of origin. Some health and entry-"
-                    "restriction requirements depend on this."
-                ),
+            passenger_type = st.selectbox(
+                "Passenger type",
+                PASSENGER_TYPES,
+                index=0,
             )
 
         with col2:
-            destination = st.selectbox(
-                "Destination",
-                reference["countries"],
+            residence_label = st.selectbox(
+                "Country of residence",
+                country_labels,
                 index=None,
-                placeholder="Select destination",
+                placeholder="Same as nationality",
+                help="Only needed if different from nationality.",
+            )
+            special_status = st.selectbox(
+                "Special status",
+                ["(none)"] + SPECIAL_STATUSES,
+                index=0,
+                help="Diplomatic, refugee, seaman, or military status can change which rules apply.",
+            )
+
+        st.markdown("**Passport**")
+        col3, col4, col5 = st.columns(3)
+
+        with col3:
+            passport_issuing_label = st.selectbox(
+                "Issuing country",
+                country_labels,
+                index=None,
+                placeholder="Same as nationality",
+                help="Leave blank if the passport was issued by the nationality country.",
+            )
+        with col4:
+            passport_label = st.selectbox(
+                "Passport type",
+                passport_labels,
+                index=None,
+                placeholder="Select passport type",
+            )
+        with col5:
+            passport_valid_until = st.date_input(
+                "Passport valid until",
+                value=None,
+                min_value=date.today(),
+            )
+
+        st.markdown("**Journey**")
+        col6, col7 = st.columns(2)
+
+        with col6:
+            origin_label = st.selectbox(
+                "Departing from (airport)",
+                airport_labels,
+                index=None,
+                placeholder="Select origin airport",
+            )
+            travel_date = st.date_input(
+                "Travel date",
+                value=None,
+                min_value=date.today(),
+            )
+
+        with col7:
+            destination_label = st.selectbox(
+                "Arriving at (airport)",
+                airport_labels,
+                index=None,
+                placeholder="Select destination airport",
             )
             purpose_label = st.selectbox(
                 "Purpose of travel",
@@ -652,12 +694,38 @@ def render_autocheck(client):
                 index=None,
                 placeholder="Select purpose of travel",
             )
-            passport_label = st.selectbox(
-                "Passport type",
-                passport_labels,
+
+        return_date = st.date_input(
+            "Return date (optional)",
+            value=None,
+            min_value=date.today(),
+        )
+
+        with st.expander("Add a transit stop (optional)"):
+            transit_label = st.selectbox(
+                "Transit airport",
+                airport_labels,
                 index=None,
-                placeholder="Select passport type",
+                placeholder="No transit stop",
+                key="autocheck_transit_airport",
             )
+            tcol1, tcol2 = st.columns(2)
+            with tcol1:
+                transit_duration = st.number_input(
+                    "Layover duration (minutes)",
+                    min_value=0,
+                    value=90,
+                    step=15,
+                )
+                transit_requires_immigration = st.checkbox(
+                    "Requires clearing immigration at this stop",
+                    value=False,
+                )
+            with tcol2:
+                transit_separate_ticket = st.checkbox(
+                    "Booked on a separate ticket",
+                    value=False,
+                )
 
         submitted = st.form_submit_button("Run auto-check", type="primary")
 
@@ -666,9 +734,12 @@ def render_autocheck(client):
             field_name
             for field_name, value in (
                 ("Nationality", nationality_label),
-                ("Destination", destination),
-                ("Purpose of travel", purpose_label),
                 ("Passport type", passport_label),
+                ("Passport valid-until date", passport_valid_until),
+                ("Origin airport", origin_label),
+                ("Destination airport", destination_label),
+                ("Travel date", travel_date),
+                ("Purpose of travel", purpose_label),
             )
             if value is None
         ]
@@ -676,14 +747,15 @@ def render_autocheck(client):
             st.warning(f"Please fill in: {', '.join(missing)}.")
             return
 
-        nationality = next(
-            country_name
-            for label, country_name in reference["nationalities"]
-            if label == nationality_label
+        nationality_iso2 = next(
+            iso2 for label, iso2 in reference["nationalities"] if label == nationality_label
         )
-
-        
-
+        origin_iata = next(
+            iata for label, iata in reference["airports"] if label == origin_label
+        )
+        destination_iata = next(
+            iata for label, iata in reference["airports"] if label == destination_label
+        )
         purpose_code = next(
             code for code, label in reference["purposes"] if label == purpose_label
         )
@@ -691,23 +763,64 @@ def render_autocheck(client):
             code for code, label in reference["passport_types"] if label == passport_label
         )
 
-        payload = {
-            "nationality": nationality,
-            "destination": destination,
-            "purpose": purpose_code,
-            "passport_type": passport_code,
+        passport_payload = {
+            "type": passport_code,
+            "valid_until": passport_valid_until.isoformat(),
         }
-        if origin_choice is not None:
-            payload["origin"] = origin_choice
+        if passport_issuing_label is not None:
+            passport_payload["issuing_country"] = next(
+                iso2 for label, iso2 in reference["countries"] if label == passport_issuing_label
+            )
+
+        passenger_payload = {
+            "nationality": nationality_iso2,
+            "passport": passport_payload,
+            "passenger_type": passenger_type,
+        }
+        if residence_label is not None:
+            passenger_payload["country_of_residence"] = next(
+                iso2 for label, iso2 in reference["countries"] if label == residence_label
+            )
+        if special_status != "(none)":
+            passenger_payload["special_status"] = special_status
+
+        journey_payload = {
+            "origin": origin_iata,
+            "destination": destination_iata,
+            "travel_date": travel_date.isoformat(),
+            "purpose": purpose_code,
+        }
+        if return_date is not None:
+            journey_payload["return_date"] = return_date.isoformat()
+
+        if transit_label is not None:
+            transit_iata = next(
+                iata for label, iata in reference["airports"] if label == transit_label
+            )
+            journey_payload["transit_points"] = [
+                {
+                    "airport": transit_iata,
+                    "duration_minutes": int(transit_duration),
+                    "requires_immigration": transit_requires_immigration,
+                    "separate_ticket": transit_separate_ticket,
+                }
+            ]
+
+        payload = {
+            "passenger": passenger_payload,
+            "journey": journey_payload,
+        }
 
         form_context = [
             ("Nationality", nationality_label),
-            ("Destination", destination),
+            ("Origin", origin_label),
+            ("Destination", destination_label),
+            ("Travel date", travel_date.isoformat()),
             ("Purpose of travel", purpose_label),
             ("Passport type", passport_label),
         ]
-        if origin_choice is not None:
-            form_context.insert(1, ("Travelling from", origin_choice))
+        if transit_label is not None:
+            form_context.append(("Transit via", transit_label))
 
         try:
             with st.spinner("Running compliance check..."):
@@ -725,18 +838,7 @@ def render_autocheck(client):
             st.error(f"Request failed: {e}")
             return
 
-    # "autocheck_dialog_open" persists across reruns (unlike the earlier
-    # version of this file, which only ever invoked the dialog directly
-    # inside an `if button:` block). It needs to, so that when a category
-    # tile or "Back to summary" inside the dialog forces a full-script
-    # rerun via st.rerun(), this dispatcher re-opens the SAME dialog
-    # showing the new view, instead of the dialog closing because it
-    # wasn't re-invoked that run.
-    #
-    # Trade-off: dismissing via the native "x" or clicking outside the
-    # dialog doesn't clear this flag, so the next unrelated interaction
-    # anywhere else on the page will reopen it. Use the in-dialog "Close"
-    # button for a reliable dismiss; it explicitly clears the flag.
+
     result = st.session_state.get("autocheck_result")
     if result and st.button("View last result"):
         st.session_state["autocheck_active_domain"] = None

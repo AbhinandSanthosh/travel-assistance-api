@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from src.core.api_key import hash_api_key
 from src.core.alerting import maybe_alert
 from src.core.request_id import get_request_id
+from src.domain.decisions import RuleExecutionRecord
 from src.domain.journey import (
     Journey,
     JourneySegment,
@@ -88,11 +89,18 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------ #
 
 _DECISION_MAP = {
+    # DecisionStatus (5 values) -> the DB's Decision enum (3 values).
+    # UNKNOWN maps to CONDITIONAL, matching AutoCheckService's
+    # deliberate policy -- missing regulatory data must never present
+    # as either "you're clear" (ALLOWED) or "travel is banned"
+    # (NOT_ALLOWED). This previously mapped UNKNOWN to NOT_ALLOWED,
+    # which told travellers they could not travel purely because the
+    # engine lacked data, not because any rule actually said so.
     "CLEAR": Decision.ALLOWED,
     "ACTION_REQUIRED": Decision.CONDITIONAL,
     "NOT_PERMITTED": Decision.NOT_ALLOWED,
     "CONDITIONAL": Decision.CONDITIONAL,
-    "UNKNOWN": Decision.NOT_ALLOWED,
+    "UNKNOWN": Decision.CONDITIONAL,
 }
 
 
@@ -576,7 +584,7 @@ class TravelRequirementsService:
         passenger = _to_passenger(payload.passenger)
         journey = _to_journey(payload.journey)
 
-        # --- Execute Rule Engine ---
+        # --- Execute Rule Engine (single pipeline entry point) ---
         try:
             engine_result = engine.execute(
                 JourneyRequest(
@@ -589,6 +597,14 @@ class TravelRequirementsService:
                 str(exc),
             ) from exc
 
+        # engine.execute() already ran journey_analyzer + context_builder
+        # internally and returned both on the result -- re-deriving them
+        # a second time (as this method previously did) doubles every
+        # reference-data lookup for no benefit and risks the two passes
+        # disagreeing if anything changed in between.
+        context = engine_result.context
+        loaded_rules = engine_result.loaded_rules
+
         stage_elapsed_ms = max(
             1,
             round(
@@ -597,29 +613,96 @@ class TravelRequirementsService:
             ),
         )
 
-        # --- Resolve rule_version ---
-        rule_version = (
-            db.query(RuleVersion)
-            .order_by(RuleVersion.effective_date.desc())
-            .first()
-        )
+        rule_rows_by_domain = {
+            "visa": loaded_rules.visa_rule,
+            "passport": loaded_rules.passport_rule,
+            "health": loaded_rules.health_rule,
+            "immigration": loaded_rules.immigration_rule,
+            "customs": loaded_rules.customs_rule,
+            "entry_restriction": loaded_rules.entry_restriction,
+        }
+        transit_rule_rows = [
+            entry.transit_rule
+            for entry in loaded_rules.transit_rules
+            if entry.transit_rule is not None
+        ]
+
+        # --- Save Rule Execution Logs + build provenance records off
+        # the actual matched DB rows (loaded_rules), the same source
+        # AutoCheckService uses -- not by re-parsing
+        # Requirement.applicable_rule_id strings back into ints, which
+        # silently logs nothing if a category name and a domain key
+        # ever drift apart. ---
+        execution_records: list[RuleExecutionRecord] = []
+
+        def _log_match(domain: str, rule_row) -> None:
+            reason = f"{domain} rule matched for this traveller."
+            execution_records.append(
+                RuleExecutionRecord(
+                    rule_id=str(rule_row.rule_id),
+                    rule_code=getattr(rule_row, "rule_code", "") or "",
+                    domain=domain,
+                    matched=True,
+                    execution_time_ms=stage_elapsed_ms,
+                    reason=reason,
+                ),
+            )
+            try:
+                self.rule_execution_log_service.create_rule_execution_log(
+                    db,
+                    RuleExecutionLogCreate(
+                        request_id=request_id,
+                        rule_id=rule_row.rule_id,
+                        matched=True,
+                        skipped=False,
+                        execution_time_ms=stage_elapsed_ms,
+                        reason=reason,
+                    ),
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to persist rule execution log for %s.",
+                    domain,
+                )
+
+        for domain, rule_row in rule_rows_by_domain.items():
+            if rule_row is None:
+                continue
+            _log_match(domain, rule_row)
+
+        for entry in loaded_rules.transit_rules:
+            if entry.transit_rule is None:
+                continue
+            _log_match(f"transit ({entry.transit_point.country})", entry.transit_rule)
+
+        # --- Resolve a rule_version for the compliance check ---
+        # Must be the version of an ACTUALLY MATCHED rule, not just
+        # whichever RuleVersion row happens to have the latest
+        # effective_date across the entire database (the previous
+        # implementation ignored rule_id entirely here, so the
+        # persisted compliance_check could reference a rule completely
+        # unrelated to the one that produced the decision).
+        rule_version = None
+
+        for rule_row in list(rule_rows_by_domain.values()) + transit_rule_rows:
+            if rule_row is None:
+                continue
+
+            rule_version = (
+                db.query(RuleVersion)
+                .filter(RuleVersion.rule_id == rule_row.rule_id)
+                .order_by(RuleVersion.effective_date.desc())
+                .first()
+            )
+
+            if rule_version is not None:
+                break
 
         if rule_version is None:
             raise NoApplicableRulesError(
                 payload.passenger.nationality,
                 payload.journey.destination,
             )
-
-        # --- Build context (once) for decision generation ---
-        jr = JourneyRequest(
-            passenger=passenger,
-            journey=journey,
-        )
-        analyzed = engine.journey_analyzer.analyze(jr)
-        context = engine.context_builder.build(
-            journey=analyzed,
-            passenger=passenger,
-        )
 
         # --- Generate Decision ---
         check_id = f"chk_{uuid.uuid4().hex[:24]}"
@@ -628,8 +711,9 @@ class TravelRequirementsService:
         decision = decision_generator.generate(
             engine_result=engine_result,
             context=context,
-            rule_version=str(rule_version.version),
+            rule_version=rule_version.version_number,
             check_id=check_id,
+            execution_records=execution_records,
             journey_origin=payload.journey.origin,
             journey_destination=(
                 payload.journey.destination
@@ -644,7 +728,7 @@ class TravelRequirementsService:
         )
         decision_enum = _DECISION_MAP.get(
             decision_value,
-            Decision.NOT_ALLOWED,
+            Decision.CONDITIONAL,
         )
 
         decision_reasons = [
@@ -690,63 +774,5 @@ class TravelRequirementsService:
                 response_json=response_json,
             ),
         )
-
-        # --- Persist Rule Execution Logs ---
-        # rule_execution_logs.rule_id is a required FK to
-        # rules.id. We derive rule_ids from the requirements
-        # the engine already produced (no redundant queries).
-
-        # Simplified: log once for the first matched rule
-        for domain in [
-            "visa",
-            "passport",
-            "health",
-            "immigration",
-            "customs",
-            "entry_restriction",
-        ]:
-            # We already have engine_result requirements
-            # Use the first requirement with an applicable
-            # rule_id that points to a real rule
-            for req in (
-                engine_result.requirements
-                + engine_result.warnings
-            ):
-                if (
-                    req.applicable_rule_id
-                    and req.category.value.upper()
-                    == domain.upper()
-                ):
-                    try:
-                        rule_id = int(
-                            req.applicable_rule_id,
-                        )
-                    except (ValueError, TypeError):
-                        continue
-
-                    try:
-                        self.rule_execution_log_service.create_rule_execution_log(
-                            db,
-                            RuleExecutionLogCreate(
-                                request_id=request_id,
-                                rule_id=rule_id,
-                                matched=True,
-                                skipped=False,
-                                execution_time_ms=(
-                                    stage_elapsed_ms
-                                ),
-                                reason=(
-                                    f"{domain} rule "
-                                    f"matched."
-                                ),
-                            ),
-                        )
-                    except Exception:
-                        logger.exception(
-                            "Failed to persist rule "
-                            "execution log for %s.",
-                            domain,
-                        )
-                    break
 
         return _build_response(decision, domains)

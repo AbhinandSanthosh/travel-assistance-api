@@ -1,15 +1,3 @@
-"""Request-ID correlation.
-
-Every request gets a UUID -- either the caller's own `X-Request-ID`
-(so a client's request ID and ours line up end to end) or a freshly
-generated one. It's stored in a ContextVar (not request.state) so
-that ANY log line emitted while handling this request picks it up
-automatically via RequestIDLogFilter, without every function down the
-call stack needing to accept and thread through a request_id
-parameter. It's also echoed back in the response header so a caller
-(or a support conversation) can hand you the exact ID to grep for.
-"""
-
 from __future__ import annotations
 
 import logging
