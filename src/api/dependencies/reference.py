@@ -1,6 +1,9 @@
 from fastapi import Depends
 
 
+from src.repositories.reference.city_repository import CityRepository
+from src.services.reference.city_service import CityService
+
 from src.repositories.reference.country_repository import CountryRepository
 from src.services.reference.country_service import CountryService
 
@@ -58,6 +61,22 @@ from src.services.reference.travel_authorization_service import (
 def get_country_repository() -> CountryRepository:
     """Provide a CountryRepository instance."""
     return CountryRepository()
+
+
+def get_city_repository() -> CityRepository:
+    """Get City repository instance."""
+    return CityRepository()
+
+
+def get_city_service(
+    city_repository: CityRepository = Depends(get_city_repository),
+    country_repository: CountryRepository = Depends(get_country_repository),
+) -> CityService:
+    """Get City service instance."""
+    return CityService(
+        city_repository,
+        country_repository,
+    )
 
 
 def get_region_repository() -> RegionRepository:
