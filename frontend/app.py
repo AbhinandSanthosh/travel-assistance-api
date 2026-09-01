@@ -9,18 +9,6 @@ from entities import ENTITIES, ENUMS, CATEGORY_ORDER
 from auth_gate import render_gate, render_sidebar_identity
 import autocheck_view
 
-
-# --------------------------------------------------------------------------
-# Foreign-key relationships used by the form renderer.
-#
-# The value submitted to the API remains the integer ID.  The user sees
-# "ID - Name" in a selectbox.
-#
-# Example:
-#     region_id -> /regions -> region_name
-#     User sees: 1 - Asia
-#     Submitted value: 1
-# --------------------------------------------------------------------------
 RELATIONS = {
     # Reference
     "region_id": {
@@ -108,7 +96,6 @@ RELATIONS = {
         "label_field": "version_number",
     },
 
-    # Data Collection
     "source_id": {
         "endpoint": "/source-registries",
         "label_field": "authority_name",
@@ -118,8 +105,7 @@ RELATIONS = {
         "label_field": "document_name",
     },
 
-    # Administration / people (reviewer, validator, and generic user FKs
-    # all point at the same Users table)
+    
     "reviewer_id": {
         "endpoint": "/users",
         "label_field": "full_name",
@@ -136,20 +122,14 @@ RELATIONS = {
 
 
 def _relation_records(field_name):
-    """
-    Load records for a foreign-key field using the already-authenticated
-    APIClient.  This is important: do NOT create a separate requests/
-    api_get() client here, because the existing APIClient already handles
-    the authenticated API connection used by this admin console.
-    """
+   
     relation = RELATIONS.get(field_name)
     if not relation:
         return []
 
     cache_key = f"relation_options__{field_name}"
 
-    # Keep a short-lived in-session cache so the API is not hit repeatedly
-    # on every widget rerun.
+    
     if cache_key in st.session_state:
         return st.session_state[cache_key]
 
@@ -171,18 +151,7 @@ def _relation_records(field_name):
 
 
 def _relation_options(field_name, current_value=None, required=True):
-    """
-    Build selectbox options.
-
-    Returns:
-        (display_options, display_to_id, selected_index)
-
-    display_options example:
-        ["1 - Asia", "2 - Europe", "3 - Africa"]
-
-    display_to_id example:
-        {"1 - Asia": 1, "2 - Europe": 2, "3 - Africa": 3}
-    """
+   
     relation = RELATIONS[field_name]
     label_field = relation["label_field"]
     records = _relation_records(field_name)
@@ -202,9 +171,7 @@ def _relation_options(field_name, current_value=None, required=True):
 
         record_id = record.get("id")
 
-        # A normal API response should expose "id".  The fallback makes
-        # this work with table-specific ID names if one of the reference
-        # endpoints uses that shape.
+       
         if record_id is None:
             for possible_id in (
                 "region_id",
@@ -237,18 +204,15 @@ def _relation_options(field_name, current_value=None, required=True):
         display_name = record.get(label_field)
 
         if display_name is None:
-            # Safe fallback if the expected display field is absent.
             display_name = record.get("name", record_id)
 
         display_text = f"{record_id} - {display_name}"
 
-        # Avoid duplicate display labels.
         if display_text not in display_to_id:
             display_to_id[display_text] = record_id
 
     display_options = list(display_to_id.keys())
 
-    # Optional FK fields get a blank choice.
     if not required:
         display_options = ["(none)"] + display_options
 
@@ -296,9 +260,7 @@ def _render_relation_field(field, key, current_value=None, required=True, help_t
 
 st.set_page_config(page_title="Travel Assistance API Console", page_icon="🧳", layout="wide")
 
-# --------------------------------------------------------------------------
-# Connection settings (kept outside the auth gate so the URL survives login)
-# --------------------------------------------------------------------------
+
 if "base_url" not in st.session_state:
     st.session_state.base_url = "http://localhost:8000"
 
@@ -313,30 +275,23 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Could not reach API: {e}")
 
-# --------------------------------------------------------------------------
-# Role selection -> login -> authenticated client
-# --------------------------------------------------------------------------
+
 client = render_gate(st.session_state.base_url)
 if client is None:
     st.stop()
 
 render_sidebar_identity(st.session_state.base_url)
 
-# --------------------------------------------------------------------------
-# Client role: hand off entirely to the traveller compliance-check view.
-# --------------------------------------------------------------------------
+
 if st.session_state.get("auth_role") == "client":
     autocheck_view.render_autocheck(client)
     st.stop()
 
-# --------------------------------------------------------------------------
-# Admin role: CRUD dashboard below.
-# --------------------------------------------------------------------------
+
 with st.sidebar:
     st.divider()
     st.caption("ENTITY")
 
-    # Refresh both the current entity list and cached foreign-key options.
     if st.button("🔄 Refresh reference options", use_container_width=True):
         for _key in list(st.session_state.keys()):
             if _key.startswith("relation_options__"):
@@ -379,8 +334,7 @@ def render_field(field, key_prefix, current_value=None, force_optional=False):
     if ftype == "email":
         return st.text_input(label, value=current_value or "", help=help_text or "user@example.com", key=key) or None
 
-    # Foreign-key integer fields are rendered as dropdowns.
-    # This check MUST happen before the generic integer renderer.
+    
     if ftype == "int" and name in RELATIONS:
         return _render_relation_field(
             field=field,
@@ -525,7 +479,6 @@ def flatten_for_table(records):
         row = {}
         for k, v in r.items():
             if isinstance(v, dict):
-                # nested response object (e.g. country: {...}) -> pull a display field
                 display = v.get("country_name") or v.get("region_name") or v.get("currency_name") or v.get("id")
                 row[k] = display
             elif isinstance(v, list):

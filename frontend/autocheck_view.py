@@ -16,8 +16,6 @@ def _dialog_factory(title):
 
 _RESULT_DIALOG_DECORATOR = _dialog_factory("Auto Check Result")
 
-#DEFAULT_API_KEY = "demo_api_key_123456789"
-
 FALLBACK_COUNTRIES = [
     {"iso2": "IN", "country_name": "India", "nationality": "Indian"},
     {"iso2": "PL", "country_name": "Poland", "nationality": "Polish"},

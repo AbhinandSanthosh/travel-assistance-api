@@ -21,15 +21,7 @@ def _handle(resp: requests.Response):
 
 
 class APIClient:
-    """Thin REST client for the Travel Assistance API console.
-
-    Admin (CRUD/rule-management) endpoints require a Bearer JWT obtained
-    from POST /api/v1/auth/login -- pass it in as `token` (or call
-    .login() then reuse the returned token). The /autocheck endpoint
-    used by the client flow does NOT use this token; it authenticates
-    via an api_key field in the request body instead.
-    """
-
+    
     def __init__(self, base_url: str, token: str | None = None, timeout: float = 15.0):
         self.base_url = base_url.rstrip("/")
         self.token = token
@@ -48,11 +40,7 @@ class APIClient:
     # ------------------------------------------------------------------
 
     def login(self, username: str, password: str) -> dict:
-        """POST /api/v1/auth/login. Returns the parsed JSON body
-        (accessToken / tokenType / expiresIn) -- does not mutate
-        self.token, callers should store the token in session state
-        themselves.
-        """
+        
         resp = requests.post(
             self._url("/api/v1/auth/login"),
             json={"username": username, "password": password},
@@ -61,7 +49,6 @@ class APIClient:
         return _handle(resp)
 
     def me(self) -> dict:
-        """GET /api/v1/auth/me using the current bearer token."""
         resp = requests.get(
             self._url("/api/v1/auth/me"),
             headers=self._headers(),
@@ -70,13 +57,7 @@ class APIClient:
         return _handle(resp)
 
     def logout(self, refresh_token: str | None = None) -> dict:
-        """POST /api/v1/auth/logout using the current bearer token.
-
-        Revokes the access token server-side (via its jti) so it can't
-        be reused for the rest of its natural lifetime. Pass the
-        refresh token too, if one was stored at login, so it's revoked
-        along with the access token.
-        """
+       
         resp = requests.post(
             self._url("/api/v1/auth/logout"),
             json={"refreshToken": refresh_token} if refresh_token else {},
@@ -114,10 +95,7 @@ class APIClient:
     # ------------------------------------------------------------------
 
     def validate_api_key(self, api_key: str) -> dict:
-        """POST /autocheck/validate-key. Confirms the key is valid,
-        active, and whitelisted for the caller's IP -- without running
-        a full compliance check or counting against the client's rate
-        limit. Raises APIError (401/403) if the key doesn't check out."""
+       
         resp = requests.post(
             self._url("/autocheck/validate-key"),
             headers={"X-API-Key": api_key},
@@ -137,9 +115,7 @@ class APIClient:
         password: str,
         contact_phone: str | None = None,
     ) -> dict:
-        """POST /api/v1/client-portal/signup. Creates the account only
-        -- no API key is issued here. Log in afterwards and call
-        generate_client_api_key()."""
+       
         resp = requests.post(
             self._url("/api/v1/client-portal/signup"),
             json={
@@ -154,9 +130,7 @@ class APIClient:
         return _handle(resp)
 
     def client_login(self, contact_email: str, password: str) -> dict:
-        """POST /api/v1/client-portal/login. Returns the parsed JSON
-        body (accessToken/tokenType/expiresIn) -- a *portal session*
-        token, not an API key."""
+       
         resp = requests.post(
             self._url("/api/v1/client-portal/login"),
             json={"contact_email": contact_email, "password": password},
@@ -174,9 +148,7 @@ class APIClient:
         return _handle(resp)
 
     def generate_client_api_key(self, portal_token: str) -> dict:
-        """POST /api/v1/client-portal/api-key. Returns the full
-        plaintext key exactly once -- the caller must display/store it
-        immediately, it cannot be retrieved again afterwards."""
+    
         resp = requests.post(
             self._url("/api/v1/client-portal/api-key"),
             headers={"Authorization": f"Bearer {portal_token}"},
